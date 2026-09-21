@@ -1,0 +1,111 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Semantica \u2014 F-002 Knowledge Graph Construction and Semantic Extraction",
+    "version": "v0.7.0",
+    "description": "Reversed from route decorators at commit 92c2578a. Shapes are $ref'd from schemas.json; entity definitions are never inlined here."
+  },
+  "paths": {
+    "/api/enrich/extract": {
+      "post": {
+        "operationId": "extract_entities",
+        "summary": "Reversed from semantica/explorer/routes/enrich.py:194",
+        "responses": {
+          "200": {
+            "description": "Declared response model: EnrichExtractResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model EnrichExtractRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enrich/links": {
+      "post": {
+        "operationId": "predict_links",
+        "summary": "Reversed from semantica/explorer/routes/enrich.py:226",
+        "responses": {
+          "200": {
+            "description": "Declared response model: LinkPredictionResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model LinkPredictionRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enrich/dedup": {
+      "post": {
+        "operationId": "detect_duplicates",
+        "summary": "Reversed from semantica/explorer/routes/enrich.py:316",
+        "responses": {
+          "200": {
+            "description": "Declared response model: DedupResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model DedupRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enrich/merge": {
+      "post": {
+        "operationId": "merge_nodes",
+        "summary": "Reversed from semantica/explorer/routes/enrich.py:371",
+        "responses": {
+          "200": {
+            "description": "Declared response model: MergeResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model MergeRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    },
+    "schemas": {
+      "ContextEdge": {
+        "$ref": "schemas.json#/$defs/ContextEdge"
+      },
+      "ContextNode": {
+        "$ref": "schemas.json#/$defs/ContextNode"
+      }
+    }
+  }
+}

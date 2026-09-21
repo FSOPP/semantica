@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantica/data/schemas.json",
+  "title": "Semantica data model",
+  "description": "Canonical entity definitions reversed from the live tree at commit 92c2578a. Every $def names the code location that defines it. erd_master.puml draws these entities, the OpenAPI/AsyncAPI files $ref them instead of redefining shapes, and every fixture record is validated against them by route.py.",
+  "$defs": {
+    "ContextNode": {
+      "type": "object",
+      "description": "Context graph node. Owned by: semantica/context. Defined at semantica/context/context_graph.py:419 (@dataclass). Persisted form is produced by ContextNode.to_dict at semantica/context/context_graph.py:450, which flattens metadata into properties and re-keys node_id->id, node_type->type.",
+      "required": ["node_id", "node_type", "content"],
+      "additionalProperties": false,
+      "properties": {
+        "node_id": { "type": "string" },
+        "node_type": { "type": "string" },
+        "content": { "type": "string" },
+        "metadata": { "type": "object", "default": {} },
+        "properties": { "type": "object", "default": {} },
+        "valid_from": { "type": ["string", "null"], "format": "date-time", "default": null },
+        "valid_until": { "type": ["string", "null"], "format": "date-time", "default": null }
+      }
+    },
+    "ContextEdge": {
+      "type": "object",
+      "description": "Context graph edge. Owned by: semantica/context. Defined at semantica/context/context_graph.py:462 (@dataclass). edge_id and family_id are assigned in __post_init__ by _resolve_edge_identity (semantica/context/context_graph.py:494); edge_type falls back to the literal 'related_to' at semantica/context/context_graph.py:479.",
+      "required": ["source_id", "target_id", "edge_type"],
+      "additionalProperties": false,
+      "properties": {
+        "source_id": { "type": "string" },
+        "target_id": { "type": "string" },
+        "edge_type": { "type": "string", "default": "related_to" },
+        "edge_id": { "type": "string", "default": "" },
+        "family_id": { "type": ["string", "null"], "default": null },
+        "weight": { "type": "number", "default": 1.0 },
+        "metadata": { "type": "object", "default": {} },
+        "valid_from": { "type": ["string", "null"], "format": "date-time", "default": null },
+        "valid_until": { "type": ["string", "null"], "format": "date-time", "default": null }
+      }
+    },
+    "NodeResponse": {
+      "type": "object",
+      "description": "Wire shape of a graph node. Owned by: semantica/explorer. Defined at semantica/explorer/schemas.py:11 (pydantic BaseModel).",
+      "required": ["id", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "content": { "type": "string", "default": "" },
+        "properties": { "type": "object", "default": {} },
+        "valid_from": { "type": ["string", "null"], "default": null },
+        "valid_until": { "type": ["string", "null"], "default": null }
+      }
+    },
+    "EdgeResponse": {
+      "type": "object",
+      "description": "Wire shape of a graph edge. Owned by: semantica/explorer. Defined at semantica/explorer/schemas.py:20 (pydantic BaseModel).",
+      "required": ["id", "source", "target", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "source": { "type": "string" },
+        "target": { "type": "string" },
+        "type": { "type": "string" },
+        "weight": { "type": "number", "default": 1.0 },
+        "properties": { "type": "object", "default": {} },
+        "valid_from": { "type": ["string", "null"], "default": null },
+        "valid_until": { "type": ["string", "null"], "default": null }
+      }
+    },
+    "PathResponse": {
+      "type": "object",
+      "description": "Result of a path query between two nodes. Owned by: semantica/explorer. Defined at semantica/explorer/schemas.py:59 (pydantic BaseModel). distance_band defaults to the literal 'direct'.",
+      "required": ["source", "target", "algorithm", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "source": { "type": "string" },
+        "target": { "type": "string" },
+        "algorithm": { "type": "string" },
+        "path": { "type": "array", "items": { "type": "string" } },
+        "edge_ids": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "total_weight": { "type": "number", "default": 0.0 },
+        "directed": { "type": "boolean", "default": true },
+        "hop_count": { "type": "integer", "default": 0 },
+        "distance_band": { "type": "string", "default": "direct" },
+        "semantic_similarity": { "type": ["number", "null"], "default": null },
+        "path_coherence_score": { "type": ["number", "null"], "default": null },
+        "confidence_decay": { "type": ["number", "null"], "default": null },
+        "bottleneck_node": { "type": ["string", "null"], "default": null },
+        "alternative_path_count": { "type": "integer", "default": 0 },
+        "interpretation": { "type": "string", "default": "" }
+      }
+    },
+    "GraphStatsResponse": {
+      "type": "object",
+      "description": "Aggregate counts for a loaded graph. Owned by: semantica/explorer. Defined at semantica/explorer/schemas.py:78 (pydantic BaseModel).",
+      "required": ["node_count", "edge_count"],
+      "additionalProperties": false,
+      "properties": {
+        "node_count": { "type": "integer" },
+        "edge_count": { "type": "integer" },
+        "node_types": { "type": "object", "additionalProperties": { "type": "integer" }, "default": {} },
+        "edge_types": { "type": "object", "additionalProperties": { "type": "integer" }, "default": {} },
+        "density": { "type": "number", "default": 0.0 }
+      }
+    },
+    "DecisionResponse": {
+      "type": "object",
+      "description": "A recorded decision as served by the API. Owned by: semantica/context. Defined at semantica/explorer/schemas.py:132 (pydantic BaseModel). Built from a context node of node_type 'decision' by _node_to_decision at semantica/explorer/routes/decisions.py:17; every field but decision_id is read out of that node's properties dict.",
+      "required": ["decision_id"],
+      "additionalProperties": false,
+      "properties": {
+        "decision_id": { "type": "string" },
+        "category": { "type": "string", "default": "" },
+        "scenario": { "type": "string", "default": "" },
+        "reasoning": { "type": "string", "default": "" },
+        "outcome": { "type": "string", "default": "" },
+        "confidence": { "type": "number", "default": 0.0 },
+        "timestamp": { "type": ["string", "null"], "default": null },
+        "metadata": { "type": "object", "default": {} }
+      }
+    },
+    "AnnotationCreate": {
+      "type": "object",
+      "description": "Request body for creating an annotation on a node. Owned by: semantica/explorer. Defined at semantica/explorer/schemas.py:257 (pydantic BaseModel).",
+      "required": ["node_id", "content"],
+      "additionalProperties": false,
+      "properties": {
+        "node_id": { "type": "string" },
+        "content": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "visibility": { "type": "string", "default": "public" }
+      }
+    },
+    "AnnotationResponse": {
+      "type": "object",
+      "description": "Stored annotation as served. Owned by: semantica/explorer. Defined at semantica/explorer/schemas.py:264 (pydantic BaseModel). Held in memory on GraphSession per the module docstring at semantica/explorer/routes/annotations.py:1.",
+      "required": ["annotation_id", "node_id", "content"],
+      "additionalProperties": false,
+      "properties": {
+        "annotation_id": { "type": "string" },
+        "node_id": { "type": "string" },
+        "content": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "visibility": { "type": "string", "default": "public" },
+        "created_at": { "type": "string", "default": "" }
+      }
+    },
+    "OntologyEntry": {
+      "type": "object",
+      "description": "Registry row for one ontology. Owned by: semantica/ontology. Defined at semantica/explorer/routes/ontology.py:175 (pydantic BaseModel). status is a closed Literal of published | draft | external.",
+      "required": ["uri", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "uri": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": ["string", "null"], "default": null },
+        "format": { "type": "string", "default": "unknown" },
+        "status": { "type": "string", "enum": ["published", "draft", "external"], "default": "external" },
+        "source_url": { "type": ["string", "null"], "default": null },
+        "version": { "type": ["string", "null"], "default": null },
+        "class_count": { "type": "integer", "default": 0 },
+        "concept_count": { "type": "integer", "default": 0 },
+        "property_count": { "type": "integer", "default": 0 },
+        "loaded_at": { "type": "string", "default": "" },
+        "enabled": { "type": "boolean", "default": true },
+        "tags": { "type": "array", "items": { "type": "string" }, "default": [] }
+      }
+    },
+    "OntologyPreview": {
+      "type": "object",
+      "description": "Parsed-but-not-loaded summary of an ontology source. Owned by: semantica/ontology. Defined at semantica/explorer/routes/ontology.py:191 (pydantic BaseModel).",
+      "required": ["uri", "name", "format"],
+      "additionalProperties": false,
+      "properties": {
+        "uri": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": ["string", "null"], "default": null },
+        "namespace": { "type": ["string", "null"], "default": null },
+        "version": { "type": ["string", "null"], "default": null },
+        "license": { "type": ["string", "null"], "default": null },
+        "format": { "type": "string" },
+        "estimated_triples": { "type": "integer", "default": 0 },
+        "source_url": { "type": ["string", "null"], "default": null }
+      }
+    },
+    "VocabularyScheme": {
+      "type": "object",
+      "description": "SKOS concept scheme. Owned by: semantica/ontology/vocabulary. Defined at semantica/explorer/schemas.py:273 (pydantic BaseModel).",
+      "required": ["uri", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "uri": { "type": "string" },
+        "label": { "type": "string" },
+        "description": { "type": ["string", "null"], "default": null }
+      }
+    },
+    "MemorySummaryResponse": {
+      "type": "object",
+      "description": "One agent-memory item in a listing. Owned by: semantica/context. Defined at semantica/explorer/schemas.py:455 (pydantic BaseModel).",
+      "required": ["id", "type", "excerpt"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "excerpt": { "type": "string" },
+        "updated_at": { "type": ["string", "null"], "default": null }
+      }
+    }
+  }
+}

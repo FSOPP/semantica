@@ -1,0 +1,27 @@
+{
+  "$comment": "Fixture set for v0.7.0 F-006, reversed at commit 92c2578a. Every top-level key is an entity in schemas.json $defs. IDs and timestamps are fixed literals; no value is copied from any real system.",
+  "ContextEdge": [
+    {
+      "source_id": "node-0001",
+      "target_id": "node-0002",
+      "edge_type": "related_to",
+      "edge_id": "edge-0001",
+      "family_id": null,
+      "weight": 1.0,
+      "metadata": {},
+      "valid_from": null,
+      "valid_until": null
+    }
+  ],
+  "ContextNode": [
+    {
+      "node_id": "node-0001",
+      "node_type": "entity",
+      "content": "Reversed fixture record.",
+      "metadata": {},
+      "properties": {},
+      "valid_from": null,
+      "valid_until": null
+    }
+  ]
+}

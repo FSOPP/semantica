@@ -1,0 +1,81 @@
+@startuml feature_v0.7.0_F-005_sequence
+' Runtime truth for F-005 v0.7.0 — Context Graph and Decision Intelligence
+' Reversed from code at commit 92c2578a. Cast is the participants: list of feature_v0.7.0_F-005_front-matter.yaml, name for name.
+title F-005 v0.7.0 — Context Graph and Decision Intelligence
+autonumber
+
+actor "Agent" as Agent
+actor "Auditor" as Auditor
+participant "routes.decisions" as Decisions
+participant "GraphSession" as Session
+participant "ContextGraph" as Ctx
+participant "CausalChainAnalyzer" as Causal
+database "graph file on disk" as Disk
+
+group F-005-US1 — record a decision with its scenario, reasoning, outcome and confidence
+  Agent -> Ctx : add decision node, node_type decision
+  activate Ctx
+  Ctx -> Ctx : hold the SKOS hierarchy invariant at the lowest write layer (semantica/context/context_graph.py:759)
+  Ctx -> Disk : serialise to a sibling temp file then rename (semantica/context/context_graph.py:1409)
+  Disk --> Ctx : replaced atomically
+  Ctx --> Agent : ContextNode written
+  deactivate Ctx
+end
+
+group F-005-US2 — walk the causal chain behind a decision
+  Auditor -> Decisions : GET /api/decisions?category=
+  activate Decisions
+  Decisions -> Session : get_nodes node_type decision
+  Session --> Decisions : nodes
+  Decisions -> Decisions : map properties onto DecisionResponse (semantica/explorer/routes/decisions.py:17)
+  Decisions --> Auditor : list of DecisionResponse
+  Auditor -> Decisions : GET /api/decisions/{decision_id}/chain
+  Decisions -> Causal : walk antecedents
+  activate Causal
+  Causal --> Decisions : CausalChainResponse
+  deactivate Causal
+  Decisions --> Auditor : CausalChainResponse
+  deactivate Decisions
+end
+
+group F-005-US3 — find precedents and check compliance for a decision
+  Auditor -> Decisions : GET /api/decisions/{decision_id}/precedents
+  activate Decisions
+  Decisions --> Auditor : list of DecisionResponse
+  Auditor -> Decisions : GET /api/decisions/{decision_id}/compliance
+  Decisions --> Auditor : ComplianceResponse
+  deactivate Decisions
+end
+
+group failure — crash or disk-full during save
+  Ctx -> Disk : write sibling temp file
+  Disk --> Ctx : write fails
+  Ctx --> Agent : error, destination still holds the old contents
+end
+
+group failure — entity-only export would emit a dangling endpoint
+  Ctx -> Ctx : drop relationships whose endpoints were filtered out (semantica/context/context_graph.py:3652)
+  Ctx --> Agent : export with no absent source_id or target_id
+end
+
+group failure — decision id is unknown
+  Auditor -> Decisions : GET /api/decisions/{decision_id}
+  Decisions -> Session : get_node
+  Session --> Decisions : none
+  Decisions --> Auditor : not found, with a detail string
+end
+
+group failure — caller writes to the graph directly, bypassing API checks
+  Agent -> Ctx : direct write
+  Ctx -> Ctx : invariant enforced below API and session checks
+  Ctx --> Agent : SKOS hierarchy still holds
+end
+
+note over Ctx
+  invariants: DOM-005-R1, DOM-005-R2, DOM-005-R3, DOM-005-R4
+  persistence: temp file then one OS-level rename (semantica/context/context_graph.py:1409)
+  list limit: internal 999999 before slicing (semantica/explorer/routes/decisions.py:31)
+  timeout: none documented - retry: none documented - idempotency: none documented
+end note
+
+@enduml

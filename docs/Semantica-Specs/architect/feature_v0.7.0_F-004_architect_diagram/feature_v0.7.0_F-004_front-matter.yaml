@@ -1,0 +1,194 @@
+# feature_v0.7.0_F-004_front-matter.yaml — instant architectural context for a coding agent.
+# Reversed from code at commit 92c2578a. Pointers and names only: every shape is defined
+# once, in data/. Unknown goes to open:, never to a plausible value.
+
+# --- identity ------------------------------------------------------------------
+id: "F-004"
+feature: "F-004"
+version: "v0.7.0"
+kind: front-matter
+title: "Ontology and Vocabulary Management"
+status: ready            # draft | ready | accepted | superseded — ready: arch_flow.py check reports no GAP
+owner: unassigned        # no maintainer is named for this feature anywhere in the repository
+updated: "2026-09-21"
+
+# --- activation ----------------------------------------------------------------
+description: "Governs the schemas the graph is validated against: registry, preview, load, drafts, proposals with approval, SKOS vocabularies, alignments and bounded SHACL validation."
+globs:
+  - "semantica/ontology/**"
+  - "semantica/explorer/routes/ontology.py"
+  - "semantica/explorer/routes/vocabulary.py"
+  - "semantica/explorer/routes/sparql.py"
+  - "explorer/src/workspaces/OntologyWorkspace/**"
+
+# --- the cast: identical to the participants of feature_v0.7.0_F-004_sequence.puml ---
+participants:
+  - name: "Ontology editor"
+    role: actor
+    path: "external"
+  - name: "Approver"
+    role: actor
+    path: "external"
+  - name: "routes.ontology"
+    role: entrypoint
+    path: "semantica/explorer/routes/ontology.py"
+  - name: "ontology engine"
+    role: service
+    path: "semantica/ontology/engine.py"
+  - name: "SHACL validator"
+    role: service
+    path: "semantica/ontology/ontology_validator.py"
+  - name: "ontology registry"
+    role: store
+    path: "semantica/ontology/registry.py"
+  - name: "context graph"
+    role: store
+    path: "semantica/context/context_graph.py"
+
+# --- where execution starts -----------------------------------------------------
+entrypoints:
+  - kind: HTTP
+    path: "semantica/explorer/routes/ontology.py"
+    symbol: "list_registry"
+  - kind: HTTP
+    path: "semantica/explorer/routes/ontology.py"
+    symbol: "generate_shacl"
+  - kind: HTTP
+    path: "semantica/explorer/routes/vocabulary.py"
+    symbol: "list_schemes"
+  - kind: HTTP
+    path: "semantica/explorer/routes/sparql.py"
+    symbol: "run_sparql"
+
+# --- contracts: named here, shaped in data/ -------------------------------------
+contracts:
+  endpoints:                # shaped in data/schema/openapi_v0.7.0_F-004.json
+    - "GET /api/ontology/registry"
+    - "POST /api/ontology/preview"
+    - "POST /api/ontology/load"
+    - "POST /api/ontology/create"
+    - "GET /api/ontology/search"
+    - "GET /api/ontology/graph"
+    - "GET /api/ontology/entity/{entity_uri}"
+    - "GET /api/ontology/skos/schemes"
+    - "POST /api/ontology/skos/search"
+    - "GET /api/ontology/skos/concept/{concept_uri}"
+    - "GET /api/ontology/alignments"
+    - "POST /api/ontology/alignments"
+    - "DELETE /api/ontology/alignments"
+    - "POST /api/ontology/suggest-alignments"
+    - "GET /api/ontology/health"
+    - "POST /api/ontology/shacl/generate"
+    - "GET /api/ontology/shacl/shapes"
+    - "POST /api/ontology/shacl/validate"
+    - "DELETE /api/ontology/{ontology_uri}"
+    - "PATCH /api/ontology/{ontology_uri}/toggle"
+    - "POST /api/ontology/{ontology_uri}/refresh"
+    - "PATCH /api/ontology/draft"
+    - "GET /api/ontology/drafts/{ontology_uri}"
+    - "GET /api/ontology/draft/{draft_id}"
+    - "POST /api/ontology/propose"
+    - "GET /api/ontology/proposals"
+    - "GET /api/ontology/proposals/{proposal_id}"
+    - "POST /api/ontology/proposals/{proposal_id}/approve"
+    - "POST /api/ontology/proposals/{proposal_id}/reject"
+    - "POST /api/ontology/proposals/{proposal_id}/publish"
+    - "POST /api/ontology/proposals/{proposal_id}/comment"
+    - "GET /api/ontology/versions/{ontology_uri}"
+    - "POST /api/ontology/versions/{ontology_uri}/compare"
+    - "GET /api/ontology/alignments/{entity_uri}"
+    - "GET /api/vocabulary/concepts"
+    - "GET /api/vocabulary/hierarchy"
+    - "POST /api/vocabulary/import"
+    - "GET /api/vocabulary/schemes"
+    - "POST /api/sparql"
+  events: []             # none: this feature declares no event in data/schema/asyncapi_v0.7.0_F-004.json
+  entities:                # shaped in data/schema/schemas.json
+    - "OntologyEntry"
+    - "OntologyPreview"
+    - "VocabularyScheme"
+
+depends_on:
+  internal:
+    - "semantica/context/context_graph.py"
+    - "semantica/explorer/dependencies.py"
+  external:
+    - "rdflib"
+    - "pySHACL, through the ontology extra"
+
+# --- the approach, as built (requirement has not run for this feature) -----------
+approach:
+  chosen: "An editorial workflow over the schema layer: drafts and proposals with explicit approval, not a one-shot file loader."
+  because:
+    - "efficiency: preview parses a source without admitting it to the registry, so a bad source costs one parse"
+    - "robustness: the SKOS hierarchy invariant is enforced at the lowest write layer, below API and session checks"
+    - "resilience: SHACL validation is bounded in payload size, graph size, time and concurrency, so one large payload cannot exhaust the server"
+  rejected: []           # not recoverable: the repository retains no record of what was rejected
+  adr: "ADR-0002"
+
+# --- what must not break --------------------------------------------------------
+invariants:
+  - "DOM-004-R1"
+  - "DOM-004-R2"
+  - "DOM-004-R3"
+  - "DOM-004-R4"
+  - "DOM-004-R5"
+
+failure_modes:
+  - when: "a turtle payload exceeds 262144 bytes"
+    expect: "refuse with a detail naming SEMANTICA_MAX_SHACL_TURTLE_BYTES"
+  - when: "a shape graph exceeds 1000 triples"
+    expect: "refuse with a detail naming SEMANTICA_MAX_SHACL_TRIPLES"
+  - when: "validation exceeds 15.0 seconds"
+    expect: "abort the request at the configured timeout"
+  - when: "more than 4 validations are in flight"
+    expect: "queue or refuse at the configured concurrency ceiling"
+
+resilience:
+  timeout_ms: 15000
+  retry: "none documented"
+  idempotency: "none documented"
+  degraded: "validation refuses past any ceiling; registry reads and the SKOS browser keep serving"
+
+observability:
+  logs: []               # none: no named log event exists for this feature; get_logger is called without an event vocabulary
+  metrics: []            # none: no metrics client is imported anywhere under semantica/
+  traces: []             # none: no tracer or span is created anywhere under semantica/
+
+non_goals:
+  - "extracting entities the ontology describes, which is F-002"
+  - "persisting the ontology outside the context graph"
+  - "enforcing who may approve a proposal: no role model exists"
+
+# --- traceability ---------------------------------------------------------------
+traceability:
+  stories:
+    - "F-004-US1"
+    - "F-004-US2"
+    - "F-004-US3"
+    - "F-004-US4"
+  rules:
+    - "DOM-004-R1"
+    - "DOM-004-R2"
+    - "DOM-004-R3"
+    - "DOM-004-R4"
+    - "DOM-004-R5"
+  tasks:
+    - "F-004-T1"
+    - "F-004-T2"
+    - "F-004-T3"
+    - "F-004-T4"
+    - "F-004-T5"
+    - "F-004-T6"
+    - "F-004-T7"
+  tests:
+    - "F-004-TC1"
+    - "F-004-TC2"
+    - "F-004-TC3"
+    - "F-004-TC4"
+  route: "docs/Semantica-Specs/route/route_v0.7.0_F-004.md"
+
+open:
+  - "Who may approve a proposal? Every route shares one process-wide API key and the code models no roles."
+  - "What happens to drafts and proposals on an ontology that is deleted or disabled? Both routes exist and their effect on open proposals is not stated."
+  - "Where did 262144, 1000, 15.0 and 4 come from? They are defaults with no stated basis."

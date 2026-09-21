@@ -1,0 +1,149 @@
+# feature_v0.7.0_F-001_front-matter.yaml — instant architectural context for a coding agent.
+# Reversed from code at commit 92c2578a. Pointers and names only: every shape is defined
+# once, in data/. Unknown goes to open:, never to a plausible value.
+
+# --- identity ------------------------------------------------------------------
+id: "F-001"
+feature: "F-001"
+version: "v0.7.0"
+kind: front-matter
+title: "Ingest and Parse Pipeline"
+status: ready            # draft | ready | accepted | superseded — ready: arch_flow.py check reports no GAP
+owner: unassigned        # no maintainer is named for this feature anywhere in the repository
+updated: "2026-09-21"
+
+# --- activation ----------------------------------------------------------------
+description: "Pulls records from 34 source systems through one registry, validates every outbound URL, then parses, normalises and splits them into chunks for extraction."
+globs:
+  - "semantica/ingest/**"
+  - "semantica/parse/**"
+  - "semantica/normalize/**"
+  - "semantica/split/**"
+
+# --- the cast: identical to the participants of feature_v0.7.0_F-001_sequence.puml ---
+participants:
+  - name: "Operator"
+    role: actor
+    path: "external"
+  - name: "semantica.cli"
+    role: entrypoint
+    path: "semantica/cli.py"
+  - name: "ingest.registry"
+    role: service
+    path: "semantica/ingest/registry.py"
+  - name: "ingest.ssrf"
+    role: service
+    path: "semantica/ingest/ssrf.py"
+  - name: "ingest.vendor_ingestor"
+    role: service
+    path: "semantica/ingest/*_ingestor.py"
+  - name: "parse.registry"
+    role: service
+    path: "semantica/parse/registry.py"
+  - name: "normalize + split"
+    role: service
+    path: "semantica/split/methods.py"
+  - name: "source system"
+    role: external
+    path: "external"
+
+# --- where execution starts -----------------------------------------------------
+entrypoints:
+  - kind: CLI
+    path: "semantica/cli.py"
+    symbol: "main"
+  - kind: library
+    path: "semantica/ingest/methods.py"
+    symbol: "ingest"
+
+# --- contracts: named here, shaped in data/ -------------------------------------
+contracts:
+  endpoints: []             # none: this feature declares no endpoint in data/schema/openapi_v0.7.0_F-001.json
+  events: []             # none: this feature declares no event in data/schema/asyncapi_v0.7.0_F-001.json
+  entities: []             # none: this feature declares no entitie in data/schema/schemas.json
+
+depends_on:
+  internal:
+    - "semantica/normalize/methods.py"
+    - "semantica/utils/logging.py"
+  external:
+    - "requests / urllib3 via the connector SDKs"
+    - "vendor SDKs per connector, unpinned in pyproject.toml"
+
+# --- the approach, as built (requirement has not run for this feature) -----------
+approach:
+  chosen: "One registry of 34 independent connectors feeding a shared parse-normalize-split chain."
+  because:
+    - "efficiency: a source type is added as one module plus a registry entry, with no change to the chain"
+    - "robustness: SSRF validation and credential redaction sit in the shared path, so every connector inherits them"
+    - "resilience: a connector failure is contained to its own run; no checkpoint or resume exists"
+  rejected: []           # not recoverable: the repository retains no record of what was rejected
+  adr: "ADR-0003"
+
+# --- what must not break --------------------------------------------------------
+invariants:
+  - "DOM-001-R1"
+  - "DOM-001-R2"
+  - "DOM-001-R3"
+  - "DOM-001-R4"
+  - "DOM-001-R5"
+
+failure_modes:
+  - when: "an access token expires mid-run"
+    expect: "refresh 60s before expiry and continue the run"
+  - when: "the source payload carries source or resource_type"
+    expect: "copy the item first, then set the connector-owned keys so they win"
+  - when: "an SDK raises with credential material in the message"
+    expect: "log the exception type only; the message never reaches a log"
+  - when: "a user-supplied target resolves to a private, loopback or link-local address"
+    expect: "refuse before the request leaves the process"
+
+resilience:
+  timeout_ms: "none documented"
+  retry: "none documented"
+  idempotency: "none documented"
+  degraded: "none: a connector failure aborts its own run, and no checkpoint or resume path exists"
+
+observability:
+  logs: []               # none: no named log event exists for this feature; get_logger is called without an event vocabulary
+  metrics: []            # none: no metrics client is imported anywhere under semantica/
+  traces: []             # none: no tracer or span is created anywhere under semantica/
+
+non_goals:
+  - "persisting anything: this feature owns no entity in data/schema/schemas.json"
+  - "extraction of entities or relations, which is F-002"
+  - "scheduling or orchestrating ingestion runs"
+
+# --- traceability ---------------------------------------------------------------
+traceability:
+  stories:
+    - "F-001-US1"
+    - "F-001-US2"
+    - "F-001-US3"
+  rules:
+    - "DOM-001-R1"
+    - "DOM-001-R2"
+    - "DOM-001-R3"
+    - "DOM-001-R4"
+    - "DOM-001-R5"
+  tasks:
+    - "F-001-T1"
+    - "F-001-T2"
+    - "F-001-T3"
+    - "F-001-T4"
+    - "F-001-T5"
+    - "F-001-T6"
+  tests:
+    - "F-001-TC1"
+    - "F-001-TC2"
+    - "F-001-TC3"
+    - "F-001-TC4"
+    - "F-001-TC5"
+    - "F-001-TC6"
+    - "F-001-TC7"
+  route: "docs/Semantica-Specs/route/route_v0.7.0_F-001.md"
+
+open:
+  - "Which of the 34 connectors are supported and which are experimental? The registry treats them identically."
+  - "What happens to a partially ingested source when a connector fails mid-run? No checkpoint, resume or compensation path exists in the code."
+  - "Is there a maximum source size, record count or ingestion duration? None is expressed."

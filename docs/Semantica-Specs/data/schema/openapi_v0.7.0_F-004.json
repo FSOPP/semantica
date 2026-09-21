@@ -1,0 +1,575 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Semantica \u2014 F-004 Ontology and Vocabulary Management",
+    "version": "v0.7.0",
+    "description": "Reversed from route decorators at commit 92c2578a. Shapes are $ref'd from schemas.json; entity definitions are never inlined here."
+  },
+  "paths": {
+    "/api/ontology/registry": {
+      "get": {
+        "operationId": "list_registry",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:1399",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[OntologyEntry]"
+          }
+        }
+      }
+    },
+    "/api/ontology/preview": {
+      "post": {
+        "operationId": "preview_ontology",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:1479",
+        "responses": {
+          "200": {
+            "description": "Declared response model: OntologyPreview"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model PreviewOntologyRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ontology/load": {
+      "post": {
+        "operationId": "load_ontology",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:1514",
+        "responses": {
+          "200": {
+            "description": "Declared response model: LoadOntologyResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model LoadOntologyRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ontology/create": {
+      "post": {
+        "operationId": "create_ontology",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:1654",
+        "responses": {
+          "200": {
+            "description": "Declared response model: LoadOntologyResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model CreateOntologyRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ontology/search": {
+      "get": {
+        "operationId": "search_entities",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:1849",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[OntologySearchResult]"
+          }
+        }
+      }
+    },
+    "/api/ontology/graph": {
+      "get": {
+        "operationId": "get_ontology_graph",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:1950",
+        "responses": {
+          "200": {
+            "description": "Declared response model: OntologyGraphResponse"
+          }
+        }
+      }
+    },
+    "/api/ontology/entity/{entity_uri:path}": {
+      "get": {
+        "operationId": "get_entity_detail",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:2010",
+        "responses": {
+          "200": {
+            "description": "Declared response model: EntityDetailResponse"
+          }
+        }
+      }
+    },
+    "/api/ontology/skos/schemes": {
+      "get": {
+        "operationId": "list_skos_schemes",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:2056",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[SKOSScheme]"
+          }
+        }
+      }
+    },
+    "/api/ontology/skos/search": {
+      "post": {
+        "operationId": "search_skos_concepts",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:2113",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[OntologySearchResult]"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model SKOSConceptSearchRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ontology/skos/concept/{concept_uri:path}": {
+      "get": {
+        "operationId": "get_skos_concept",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:2184",
+        "responses": {
+          "200": {
+            "description": "Declared response model: SKOSConceptDetail"
+          }
+        }
+      }
+    },
+    "/api/ontology/alignments": {
+      "get": {
+        "operationId": "list_alignments",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:2322",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[OntologyAlignment]"
+          }
+        }
+      },
+      "post": {
+        "operationId": "upsert_alignment",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:2337",
+        "responses": {
+          "200": {
+            "description": "Declared response model: OntologyAlignment"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model OntologyAlignmentRequest"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete_alignment",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:2385",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/api/ontology/suggest-alignments": {
+      "post": {
+        "operationId": "suggest_alignments",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:2394",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[AlignmentSuggestion]"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model AlignmentSuggestionRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ontology/health": {
+      "get": {
+        "operationId": "ontology_health",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:2496",
+        "responses": {
+          "200": {
+            "description": "Declared response model: OntologyHealthResponse"
+          }
+        }
+      }
+    },
+    "/api/ontology/shacl/generate": {
+      "post": {
+        "operationId": "generate_shacl",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:2922",
+        "responses": {
+          "200": {
+            "description": "Declared response model: ShaclGenerateResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model ShaclGenerateRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ontology/shacl/shapes": {
+      "get": {
+        "operationId": "list_shacl_shapes",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:2940",
+        "responses": {
+          "200": {
+            "description": "Declared response model: ShaclShapesResponse"
+          }
+        }
+      }
+    },
+    "/api/ontology/shacl/validate": {
+      "post": {
+        "operationId": "validate_shacl",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:2958",
+        "responses": {
+          "200": {
+            "description": "Declared response model: ShaclValidationResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model ShaclValidateRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ontology/{ontology_uri:path}": {
+      "delete": {
+        "operationId": "remove_ontology",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3121",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/api/ontology/{ontology_uri:path}/toggle": {
+      "patch": {
+        "operationId": "toggle_ontology",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3130",
+        "responses": {
+          "200": {
+            "description": "Declared response model: ToggleResponse"
+          }
+        }
+      }
+    },
+    "/api/ontology/{ontology_uri:path}/refresh": {
+      "post": {
+        "operationId": "refresh_ontology",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3140",
+        "responses": {
+          "200": {
+            "description": "Declared response model: RefreshResponse"
+          }
+        }
+      }
+    },
+    "/api/ontology/draft": {
+      "patch": {
+        "operationId": "save_draft",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3181",
+        "responses": {
+          "200": {
+            "description": "Declared response model: DraftResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model DraftRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ontology/drafts/{ontology_uri:path}": {
+      "get": {
+        "operationId": "list_drafts",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3215",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[DraftResponse]"
+          }
+        }
+      }
+    },
+    "/api/ontology/draft/{draft_id}": {
+      "get": {
+        "operationId": "get_draft",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3225",
+        "responses": {
+          "200": {
+            "description": "Declared response model: DraftResponse"
+          }
+        }
+      }
+    },
+    "/api/ontology/propose": {
+      "post": {
+        "operationId": "submit_proposal",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3241",
+        "responses": {
+          "200": {
+            "description": "Declared response model: ProposalResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model ProposalRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ontology/proposals": {
+      "get": {
+        "operationId": "list_proposals",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3374",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[ProposalResponse]"
+          }
+        }
+      }
+    },
+    "/api/ontology/proposals/{proposal_id}": {
+      "get": {
+        "operationId": "get_proposal",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3392",
+        "responses": {
+          "200": {
+            "description": "Declared response model: ProposalResponse"
+          }
+        }
+      }
+    },
+    "/api/ontology/proposals/{proposal_id}/approve": {
+      "post": {
+        "operationId": "approve_proposal",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3404",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/api/ontology/proposals/{proposal_id}/reject": {
+      "post": {
+        "operationId": "reject_proposal",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3419",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/api/ontology/proposals/{proposal_id}/publish": {
+      "post": {
+        "operationId": "publish_proposal",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3434",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/api/ontology/proposals/{proposal_id}/comment": {
+      "post": {
+        "operationId": "add_comment",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3546",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model CommentRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ontology/versions/{ontology_uri:path}": {
+      "get": {
+        "operationId": "list_versions",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3573",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[VersionEntry]"
+          }
+        }
+      }
+    },
+    "/api/ontology/versions/{ontology_uri:path}/compare": {
+      "post": {
+        "operationId": "compare_versions",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3583",
+        "responses": {
+          "200": {
+            "description": "Declared response model: VersionCompareResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model VersionCompareRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ontology/alignments/{entity_uri:path}": {
+      "get": {
+        "operationId": "get_alignments",
+        "summary": "Reversed from semantica/explorer/routes/ontology.py:3720",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[AlignmentResponse]"
+          }
+        }
+      }
+    },
+    "/api/sparql": {
+      "post": {
+        "operationId": "execute_sparql",
+        "summary": "Reversed from semantica/explorer/routes/sparql.py:209",
+        "responses": {
+          "200": {
+            "description": "Declared response model: SparqlResponse"
+          }
+        }
+      }
+    },
+    "/api/vocabulary/schemes": {
+      "get": {
+        "operationId": "list_schemes",
+        "summary": "Reversed from semantica/explorer/routes/vocabulary.py:96",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[VocabularyScheme]"
+          }
+        }
+      }
+    },
+    "/api/vocabulary/concepts": {
+      "get": {
+        "operationId": "list_concepts",
+        "summary": "Reversed from semantica/explorer/routes/vocabulary.py:116",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[ConceptSummary]"
+          }
+        }
+      }
+    },
+    "/api/vocabulary/hierarchy": {
+      "get": {
+        "operationId": "get_hierarchy",
+        "summary": "Reversed from semantica/explorer/routes/vocabulary.py:144",
+        "responses": {
+          "200": {
+            "description": "Declared response model: List[ConceptNode]"
+          }
+        }
+      }
+    },
+    "/api/vocabulary/import": {
+      "post": {
+        "operationId": "import_vocabulary",
+        "summary": "Reversed from semantica/explorer/routes/vocabulary.py:174",
+        "responses": {
+          "200": {
+            "description": "Declared response model: VocabularyImportResponse"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    },
+    "schemas": {
+      "OntologyEntry": {
+        "$ref": "schemas.json#/$defs/OntologyEntry"
+      },
+      "OntologyPreview": {
+        "$ref": "schemas.json#/$defs/OntologyPreview"
+      },
+      "VocabularyScheme": {
+        "$ref": "schemas.json#/$defs/VocabularyScheme"
+      }
+    }
+  }
+}

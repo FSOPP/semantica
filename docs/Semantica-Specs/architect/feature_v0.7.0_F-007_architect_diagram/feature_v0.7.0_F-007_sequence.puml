@@ -1,0 +1,114 @@
+@startuml feature_v0.7.0_F-007_sequence
+' Runtime truth for F-007 v0.7.0 — Knowledge Explorer UI and Graph API
+' Reversed from code at commit 92c2578a. Cast is the participants: list of feature_v0.7.0_F-007_front-matter.yaml, name for name.
+title F-007 v0.7.0 — Knowledge Explorer UI and Graph API
+autonumber
+
+actor "Explorer user" as User
+participant "explorer SPA" as Spa
+participant "explorer app" as App
+participant "routes.graph" as Graph
+participant "routes.temporal" as Temporal
+participant "routes.markdown" as Markdown
+participant "routes.annotations" as Annotations
+participant "GraphSession" as Session
+
+group F-007-US1 — browse a graph of any size without loading it all
+  User -> Spa : open the Explorer
+  Spa -> App : GET /
+  activate App
+  App --> Spa : index.html from the packaged static directory
+  deactivate App
+  Spa -> Graph : GET /api/graph/nodes, X-API-Key
+  activate Graph
+  Graph -> Graph : parse bbox, bound limit at 5000 (semantica/explorer/routes/graph.py:108)
+  Graph -> Session : paginate_nodes in a worker thread
+  Session --> Graph : nodes, total, next_cursor
+  Graph --> Spa : NodeListResponse with an opaque cursor
+  deactivate Graph
+  Spa -> Graph : GET /api/graph/stats
+  Graph --> Spa : GraphStatsResponse
+end
+
+group F-007-US2 — scrub through time and see the graph as it was
+  User -> Spa : move the scrubber to a position
+  Spa -> Spa : one in-flight request per position, identical at polls deduplicated (explorer/src/workspaces/GraphWorkspace/GraphWorkspace.tsx:1465)
+  Spa -> Temporal : GET /api/temporal/snapshot
+  activate Temporal
+  Temporal --> Spa : snapshot
+  deactivate Temporal
+  Spa -> Spa : apply only while the scrubber is still on that position
+  Spa --> User : graph as of the scrubber position
+end
+
+group F-007-US3 — annotate a node
+  User -> Spa : add an annotation
+  Spa -> Annotations : POST /api/annotations, AnnotationCreate
+  activate Annotations
+  Annotations -> Session : get_node
+  Session --> Annotations : node
+  Annotations -> Session : add_annotation, held in memory
+  Session --> Annotations : annotation_id
+  Annotations --> Spa : created, AnnotationResponse
+  deactivate Annotations
+end
+
+group F-007-US4 — edit a node's markdown and see a conflict if it moved underneath me
+  User -> Spa : edit markdown
+  Spa -> Markdown : GET /api/markdown/{kind}/{resource_id}
+  activate Markdown
+  Markdown --> Spa : MarkdownDocumentResponse with a revision
+  Spa -> Markdown : PUT /api/markdown/{kind}/{resource_id}
+  Markdown --> Spa : MarkdownApplyResponse
+  deactivate Markdown
+  Spa --> User : applied result
+end
+
+group failure — scrubber polls the same position while idle or playing
+  Spa -> Spa : one in-flight request per position, identical at polls deduplicated (explorer/src/workspaces/GraphWorkspace/GraphWorkspace.tsx:1465)
+  Spa --> User : no polling loop, the applied snapshot is reused on revisit
+end
+
+group failure — frontend bundle absent from the install
+  Spa -> App : GET /
+  App -> App : index.html existence check (semantica/explorer/app.py:195)
+  App --> Spa : instructional HTML page, not a server error
+end
+
+group failure — snapshot request fails or is cancelled
+  Spa -> Temporal : GET /api/temporal/snapshot
+  Temporal --> Spa : error or cancellation
+  Spa -> Spa : position stays retryable on revisit (explorer/src/workspaces/GraphWorkspace/GraphWorkspace.tsx:1541)
+end
+
+group failure — snapshot response arrives after the scrubber moved
+  Temporal --> Spa : snapshot for the previous position
+  Spa -> Spa : discard, the scrubber has moved on
+end
+
+group failure — markdown revision moved underneath the editor
+  Spa -> Markdown : PUT /api/markdown/{kind}/{resource_id} with a stale revision
+  Markdown --> Spa : conflict, the stored revision moved
+  Spa --> User : draft kept, recovery path offered (explorer/tests/markdownEditorInteraction.test.tsx:459)
+end
+
+group failure — annotation targets a node that does not exist
+  Annotations -> Session : get_node
+  Session --> Annotations : none
+  Annotations --> Spa : not found, with a detail string (semantica/explorer/routes/annotations.py:38)
+end
+
+group failure — an api path reaches the SPA catch-all
+  Spa -> App : a request under api/ that no router serves
+  App -> App : refuse to serve the SPA shell under api/ (semantica/explorer/app.py:238)
+  App --> Spa : not found, the API route does not exist
+end
+
+note over Graph
+  invariants: DOM-007-R1, DOM-007-R2, DOM-007-R3, DOM-007-R4, DOM-007-R5, DOM-007-R6
+  page size: limit bounded 1..5000, forward cursor (semantica/explorer/routes/graph.py:108)
+  auth: X-API-Key on every router (semantica/explorer/app.py:173)
+  timeout: none documented - retry: none documented - idempotency: none documented
+end note
+
+@enduml

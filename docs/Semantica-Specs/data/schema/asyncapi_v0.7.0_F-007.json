@@ -1,0 +1,15 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "Semantica \u2014 F-007 Knowledge Explorer UI and Graph API",
+    "version": "v0.7.0",
+    "description": "A WebSocket channel for graph updates is installed at semantica/explorer/app.py:188. Its message envelope is not declared anywhere in the repository, so no payload is described here."
+  },
+  "channels": {
+    "graph-updates": {
+      "address": "ws (path declared in semantica/explorer/ws.py)",
+      "description": "Graph update push channel, installed at semantica/explorer/app.py:188. Payload shape not declared in the repository."
+    }
+  },
+  "operations": {}
+}

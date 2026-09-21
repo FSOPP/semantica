@@ -1,0 +1,357 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Semantica \u2014 F-007 Knowledge Explorer UI and Graph API",
+    "version": "v0.7.0",
+    "description": "Reversed from route decorators at commit 92c2578a. Shapes are $ref'd from schemas.json; entity definitions are never inlined here."
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "semantica/explorer/app.py:190",
+        "summary": "Reversed from semantica/explorer/app.py:190",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "semantica/explorer/app.py:217",
+        "summary": "Reversed from semantica/explorer/app.py:217",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/api/info": {
+      "get": {
+        "operationId": "semantica/explorer/app.py:221",
+        "summary": "Reversed from semantica/explorer/app.py:221",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/{full_path:path}": {
+      "get": {
+        "operationId": "semantica/explorer/app.py:236",
+        "summary": "Reversed from semantica/explorer/app.py:236",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/api/annotations": {
+      "get": {
+        "operationId": "list_annotations",
+        "summary": "Reversed from semantica/explorer/routes/annotations.py:20",
+        "responses": {
+          "200": {
+            "description": "Declared response model: list[AnnotationResponse]"
+          }
+        }
+      },
+      "post": {
+        "operationId": "create_annotation",
+        "summary": "Reversed from semantica/explorer/routes/annotations.py:30",
+        "responses": {
+          "201": {
+            "description": "Declared response model: AnnotationResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model AnnotationCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/annotations/{annotation_id}": {
+      "delete": {
+        "operationId": "delete_annotation",
+        "summary": "Reversed from semantica/explorer/routes/annotations.py:56",
+        "responses": {
+          "204": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/api/graph/nodes": {
+      "get": {
+        "operationId": "list_nodes",
+        "summary": "Reversed from semantica/explorer/routes/graph.py:101",
+        "responses": {
+          "200": {
+            "description": "Declared response model: NodeListResponse"
+          }
+        }
+      }
+    },
+    "/api/graph/node": {
+      "get": {
+        "operationId": "get_node_by_query",
+        "summary": "Reversed from semantica/explorer/routes/graph.py:131",
+        "responses": {
+          "200": {
+            "description": "Declared response model: NodeResponse"
+          }
+        }
+      }
+    },
+    "/api/graph/node/{node_id}": {
+      "get": {
+        "operationId": "get_node",
+        "summary": "Reversed from semantica/explorer/routes/graph.py:139",
+        "responses": {
+          "200": {
+            "description": "Declared response model: NodeResponse"
+          }
+        }
+      }
+    },
+    "/api/graph/node/{node_id}/neighbors": {
+      "get": {
+        "operationId": "get_neighbors",
+        "summary": "Reversed from semantica/explorer/routes/graph.py:147",
+        "responses": {
+          "200": {
+            "description": "Declared response model: list[NeighborResponse]"
+          }
+        }
+      }
+    },
+    "/api/graph/edges": {
+      "get": {
+        "operationId": "list_edges",
+        "summary": "Reversed from semantica/explorer/routes/graph.py:167",
+        "responses": {
+          "200": {
+            "description": "Declared response model: EdgeListResponse"
+          }
+        }
+      }
+    },
+    "/api/graph/path": {
+      "get": {
+        "operationId": "find_path_by_query",
+        "summary": "Reversed from semantica/explorer/routes/graph.py:340",
+        "responses": {
+          "200": {
+            "description": "Declared response model: PathResponse"
+          }
+        }
+      }
+    },
+    "/api/graph/node/{node_id}/path": {
+      "get": {
+        "operationId": "find_path",
+        "summary": "Reversed from semantica/explorer/routes/graph.py:351",
+        "responses": {
+          "200": {
+            "description": "Declared response model: PathResponse"
+          }
+        }
+      }
+    },
+    "/api/graph/search": {
+      "post": {
+        "operationId": "search_nodes",
+        "summary": "Reversed from semantica/explorer/routes/graph.py:368",
+        "responses": {
+          "200": {
+            "description": "Declared response model: SearchResultResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model SearchRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/graph/distance-matrix": {
+      "post": {
+        "operationId": "distance_matrix",
+        "summary": "Reversed from semantica/explorer/routes/graph.py:422",
+        "responses": {
+          "200": {
+            "description": "Declared response model: DistanceMatrixResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model DistanceMatrixRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/graph/semantic-neighborhood": {
+      "get": {
+        "operationId": "semantic_neighborhood_by_query",
+        "summary": "Reversed from semantica/explorer/routes/graph.py:576",
+        "responses": {
+          "200": {
+            "description": "Declared response model: SemanticNeighborhoodResponse"
+          }
+        }
+      }
+    },
+    "/api/graph/node/{node_id}/semantic-neighborhood": {
+      "get": {
+        "operationId": "semantic_neighborhood",
+        "summary": "Reversed from semantica/explorer/routes/graph.py:586",
+        "responses": {
+          "200": {
+            "description": "Declared response model: SemanticNeighborhoodResponse"
+          }
+        }
+      }
+    },
+    "/api/graph/stats": {
+      "get": {
+        "operationId": "graph_stats",
+        "summary": "Reversed from semantica/explorer/routes/graph.py:602",
+        "responses": {
+          "200": {
+            "description": "Declared response model: GraphStatsResponse"
+          }
+        }
+      }
+    },
+    "/api/markdown/{kind}/{resource_id:path}": {
+      "get": {
+        "operationId": "read_markdown_resource",
+        "summary": "Reversed from semantica/explorer/routes/markdown.py:82",
+        "responses": {
+          "200": {
+            "description": "Declared response model: MarkdownDocumentResponse"
+          }
+        }
+      },
+      "put": {
+        "operationId": "apply_markdown_resource",
+        "summary": "Reversed from semantica/explorer/routes/markdown.py:97",
+        "responses": {
+          "200": {
+            "description": "Declared response model: MarkdownApplyResponse"
+          }
+        }
+      }
+    },
+    "/api/temporal/snapshot": {
+      "get": {
+        "operationId": "temporal_snapshot",
+        "summary": "Reversed from semantica/explorer/routes/temporal.py:64",
+        "responses": {
+          "200": {
+            "description": "Declared response model: TemporalSnapshotFastResponse"
+          }
+        }
+      }
+    },
+    "/api/temporal/diff": {
+      "get": {
+        "operationId": "temporal_diff",
+        "summary": "Reversed from semantica/explorer/routes/temporal.py:79",
+        "responses": {
+          "200": {
+            "description": "Declared response model: TemporalDiffResponse"
+          }
+        }
+      }
+    },
+    "/api/temporal/patterns": {
+      "get": {
+        "operationId": "temporal_patterns",
+        "summary": "Reversed from semantica/explorer/routes/temporal.py:103",
+        "responses": {
+          "200": {
+            "description": "Declared response model: TemporalPatternResponse"
+          }
+        }
+      }
+    },
+    "/api/temporal/bounds": {
+      "get": {
+        "operationId": "temporal_bounds",
+        "summary": "Reversed from semantica/explorer/routes/temporal.py:123",
+        "responses": {
+          "200": {
+            "description": "Declared response model: TemporalBoundsResponse"
+          }
+        }
+      }
+    },
+    "/api/temporal/distance-history": {
+      "get": {
+        "operationId": "distance_history",
+        "summary": "Reversed from semantica/explorer/routes/temporal.py:131",
+        "responses": {
+          "200": {
+            "description": "Declared response model: DistanceHistoryResponse"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    },
+    "schemas": {
+      "AnnotationCreate": {
+        "$ref": "schemas.json#/$defs/AnnotationCreate"
+      },
+      "AnnotationResponse": {
+        "$ref": "schemas.json#/$defs/AnnotationResponse"
+      },
+      "ContextEdge": {
+        "$ref": "schemas.json#/$defs/ContextEdge"
+      },
+      "ContextNode": {
+        "$ref": "schemas.json#/$defs/ContextNode"
+      },
+      "EdgeResponse": {
+        "$ref": "schemas.json#/$defs/EdgeResponse"
+      },
+      "GraphStatsResponse": {
+        "$ref": "schemas.json#/$defs/GraphStatsResponse"
+      },
+      "NodeResponse": {
+        "$ref": "schemas.json#/$defs/NodeResponse"
+      },
+      "PathResponse": {
+        "$ref": "schemas.json#/$defs/PathResponse"
+      }
+    }
+  }
+}

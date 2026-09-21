@@ -1,0 +1,150 @@
+# feature_v0.7.0_F-003_front-matter.yaml — instant architectural context for a coding agent.
+# Reversed from code at commit 92c2578a. Pointers and names only: every shape is defined
+# once, in data/. Unknown goes to open:, never to a plausible value.
+
+# --- identity ------------------------------------------------------------------
+id: "F-003"
+feature: "F-003"
+version: "v0.7.0"
+kind: front-matter
+title: "Storage Backends"
+status: ready            # draft | ready | accepted | superseded — ready: arch_flow.py check reports no GAP
+owner: unassigned        # no maintainer is named for this feature anywhere in the repository
+updated: "2026-09-21"
+
+# --- activation ----------------------------------------------------------------
+description: "Persists the graph across three families of backend - 11 graph stores, 19 vector stores, 15 triplet stores - each selected by name through its own registry."
+globs:
+  - "semantica/graph_store/**"
+  - "semantica/vector_store/**"
+  - "semantica/triplet_store/**"
+
+# --- the cast: identical to the participants of feature_v0.7.0_F-003_sequence.puml ---
+participants:
+  - name: "pipeline or session"
+    role: actor
+    path: "semantica/pipeline/execution_engine.py"
+  - name: "vector_store.registry"
+    role: service
+    path: "semantica/vector_store/registry.py"
+  - name: "VectorStore facade"
+    role: service
+    path: "semantica/vector_store/vector_store.py"
+  - name: "FaissStore"
+    role: service
+    path: "semantica/vector_store/faiss_store.py"
+  - name: "index file on disk"
+    role: store
+    path: "semantica/vector_store/faiss_store.py"
+  - name: "graph_store.registry"
+    role: service
+    path: "semantica/graph_store/registry.py"
+
+# --- where execution starts -----------------------------------------------------
+entrypoints:
+  - kind: library
+    path: "semantica/vector_store/registry.py"
+    symbol: "get_vector_store"
+  - kind: library
+    path: "semantica/graph_store/registry.py"
+    symbol: "get_graph_store"
+
+# --- contracts: named here, shaped in data/ -------------------------------------
+contracts:
+  endpoints: []             # none: this feature declares no endpoint in data/schema/openapi_v0.7.0_F-003.json
+  events: []             # none: this feature declares no event in data/schema/asyncapi_v0.7.0_F-003.json
+  entities:                # shaped in data/schema/schemas.json
+    - "ContextNode"
+    - "ContextEdge"
+
+depends_on:
+  internal:
+    - "semantica/triplet_store/registry.py"
+    - "semantica/graph_store/query_sanitize.py"
+    - "semantica/triplet_store/sparql_escaping.py"
+  external:
+    - "FAISS, Milvus, Pinecone, Qdrant, Weaviate, pgvector, sqlite-vec — each through its own extra"
+    - "Neo4j, Amazon Neptune, FalkorDB, Apache AGE"
+    - "Anzo, Blazegraph, Jena, Oxigraph, RDF4J"
+
+# --- the approach, as built (requirement has not run for this feature) -----------
+approach:
+  chosen: "Three parallel registries of vendor adapters, each tier configured and failing independently of the others."
+  because:
+    - "efficiency: a backend is swapped by configuration, with no caller change"
+    - "robustness: identifier allocation, metadata write and index rebuild happen under one lock, and a save serialises before touching any file"
+    - "resilience: a graph store outage does not take the vector store with it; no cross-tier transaction exists"
+  rejected: []           # not recoverable: the repository retains no record of what was rejected
+  adr: "ADR-0003"
+
+# --- what must not break --------------------------------------------------------
+invariants:
+  - "DOM-003-R1"
+  - "DOM-003-R2"
+  - "DOM-003-R3"
+  - "DOM-003-R4"
+  - "DOM-003-R5"
+
+failure_modes:
+  - when: "serialisation raises during a save"
+    expect: "serialise ids, metadata, dimension and index type before opening any file, leaving the persisted index untouched"
+  - when: "the persisted identifier counter is stale or corrupted"
+    expect: "clamp to at least the highest inferred vec_N on load so new ids cannot collide with survivors"
+  - when: "a delete runs concurrently with a read"
+    expect: "snapshot vectors and metadata together under the lock"
+  - when: "a query vector is all zeros on a cosine index"
+    expect: "substitute a unit vector so the vendor accepts the query"
+  - when: "a process restarts after a delete"
+    expect: "persist the deletion when the store was disk-loaded, so deleted vectors do not come back"
+
+resilience:
+  timeout_ms: "none documented"
+  retry: "none documented"
+  idempotency: "vector identifiers are monotonic and never reused, so a replayed add cannot overwrite a survivor"
+  degraded: "none documented: a backend outage surfaces as the vendor client's own error"
+
+observability:
+  logs: []               # none: no named log event exists for this feature; get_logger is called without an event vocabulary
+  metrics: []            # none: no metrics client is imported anywhere under semantica/
+  traces: []             # none: no tracer or span is created anywhere under semantica/
+
+non_goals:
+  - "deciding what to store, which is F-002"
+  - "coordinating consistency between two backends holding the same graph"
+  - "migrating data between backends as part of this feature's own flow"
+
+# --- traceability ---------------------------------------------------------------
+traceability:
+  stories:
+    - "F-003-US1"
+    - "F-003-US2"
+    - "F-003-US3"
+  rules:
+    - "DOM-003-R1"
+    - "DOM-003-R2"
+    - "DOM-003-R3"
+    - "DOM-003-R4"
+    - "DOM-003-R5"
+  tasks:
+    - "F-003-T1"
+    - "F-003-T2"
+    - "F-003-T3"
+    - "F-003-T4"
+    - "F-003-T5"
+    - "F-003-T6"
+  tests:
+    - "F-003-TC1"
+    - "F-003-TC2"
+    - "F-003-TC3"
+    - "F-003-TC4"
+    - "F-003-TC5"
+    - "F-003-TC6"
+    - "F-003-TC7"
+    - "F-003-TC8"
+    - "F-003-TC9"
+  route: "docs/Semantica-Specs/route/route_v0.7.0_F-003.md"
+
+open:
+  - "Which backend is the default for a production deployment? Two environment keys select one and neither names a recommended value in code."
+  - "What consistency is promised when the same graph is written to a graph store and a vector store? Nothing coordinates the two."
+  - "Are any of the 45 backends unsupported or deprecated? The registries do not say."

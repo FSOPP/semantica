@@ -1,0 +1,82 @@
+@startuml feature_v0.7.0_F-001_sequence
+' Runtime truth for F-001 v0.7.0 — Ingest and Parse Pipeline
+' Reversed from code at commit 92c2578a. Cast is the participants: list of feature_v0.7.0_F-001_front-matter.yaml, name for name.
+title F-001 v0.7.0 — Ingest and Parse Pipeline
+autonumber
+
+actor "Operator" as Operator
+participant "semantica.cli" as Cli
+participant "ingest.registry" as Registry
+participant "ingest.ssrf" as Ssrf
+participant "ingest.vendor_ingestor" as Ingestor
+participant "parse.registry" as ParseRegistry
+participant "normalize + split" as Split
+boundary "source system" as Source
+
+group F-001-US1 — connect a source system by naming it and supplying credentials
+  Operator -> Cli : semantica ingest (semantica/cli.py:2042)
+  activate Cli
+  Cli -> Registry : resolve connector by name
+  Registry --> Cli : ingestor instance
+  Cli -> Ingestor : connect, credentials from that vendor's own environment keys
+  activate Ingestor
+  Ingestor -> Source : authenticate
+  Source --> Ingestor : access token
+  Ingestor --> Cli : connected
+  deactivate Ingestor
+end
+
+group F-001-US2 — know that user-supplied ingest targets cannot reach internal addresses
+  Cli -> Ingestor : fetch records
+  activate Ingestor
+  Ingestor -> Ssrf : validate outbound URL (semantica/ingest/ssrf.py:1)
+  Ssrf --> Ingestor : allowed
+  Ingestor -> Source : GET page 1
+  Source --> Ingestor : records + next link
+  Ingestor -> Ssrf : validate next link origin (semantica/ingest/sap_ingestor.py:489)
+  Ssrf --> Ingestor : same origin, credential may travel
+  Ingestor --> Cli : raw records
+  deactivate Ingestor
+end
+
+group F-001-US3 — feed any of 22 document formats into the same pipeline
+  Cli -> ParseRegistry : resolve parser by format
+  ParseRegistry --> Cli : parser instance
+  Cli -> Split : normalize then split (semantica/split/methods.py:340)
+  Split --> Cli : chunks
+  Cli --> Operator : chunk count
+  deactivate Cli
+end
+
+group failure — access token expires mid-run
+  Ingestor -> Ingestor : refresh 60s before expiry (semantica/ingest/powerbi_ingestor.py:312)
+  Ingestor -> Source : GET next page with refreshed token
+  Source --> Ingestor : records
+end
+
+group failure — source payload carries source or resource_type
+  Ingestor -> Ingestor : copy item, then set connector-owned keys (semantica/ingest/powerbi_ingestor.py:780)
+  Ingestor --> Cli : record with connector-owned keys intact
+end
+
+group failure — SDK raises with credential material in the message
+  Source --> Ingestor : SDK exception
+  Ingestor -> Ingestor : log exception type only (semantica/ingest/redshift_ingestor.py:512)
+  Ingestor --> Cli : error, message withheld
+  Cli --> Operator : failure without credential text
+end
+
+group failure — target resolves to a private or loopback address
+  Ingestor -> Ssrf : validate outbound URL
+  Ssrf --> Ingestor : refused
+  Ingestor --> Cli : validation error
+  Cli --> Operator : request never left the process
+end
+
+note over Ingestor
+  invariants: DOM-001-R1, DOM-001-R2, DOM-001-R3, DOM-001-R4, DOM-001-R5
+  token refresh: 60s before expiry (semantica/ingest/powerbi_ingestor.py:312)
+  timeout: none documented - retry: none documented - idempotency: none documented
+end note
+
+@enduml

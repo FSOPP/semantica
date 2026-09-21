@@ -1,0 +1,93 @@
+@startuml erd_v0.7.0_F-007
+' Reversed from schemas.json at commit 92c2578a. Entities are introduced in erd_master.puml.
+hide circle
+skinparam linetype ortho
+
+entity "AnnotationCreate" as AnnotationCreate {
+  * node_id : string
+  * content : string
+    tags : array
+    visibility : string
+}
+
+entity "AnnotationResponse" as AnnotationResponse {
+  * annotation_id : string
+  * node_id : string
+  * content : string
+    tags : array
+    visibility : string
+    created_at : string
+}
+
+entity "ContextEdge" as ContextEdge {
+  * source_id : string
+  * target_id : string
+  * edge_type : string
+    edge_id : string
+    family_id : string
+    weight : number
+    metadata : object
+    valid_from : string
+    valid_until : string
+}
+
+entity "ContextNode" as ContextNode {
+  * node_id : string
+  * node_type : string
+  * content : string
+    metadata : object
+    properties : object
+    valid_from : string
+    valid_until : string
+}
+
+entity "EdgeResponse" as EdgeResponse {
+  * id : string
+  * source : string
+  * target : string
+  * type : string
+    weight : number
+    properties : object
+    valid_from : string
+    valid_until : string
+}
+
+entity "GraphStatsResponse" as GraphStatsResponse {
+  * node_count : integer
+  * edge_count : integer
+    node_types : object
+    edge_types : object
+    density : number
+}
+
+entity "NodeResponse" as NodeResponse {
+  * id : string
+  * type : string
+    content : string
+    properties : object
+    valid_from : string
+    valid_until : string
+}
+
+entity "PathResponse" as PathResponse {
+  * source : string
+  * target : string
+  * algorithm : string
+  * path : array
+    edge_ids : array
+    total_weight : number
+    directed : boolean
+    hop_count : integer
+    distance_band : string
+    semantic_similarity : number
+    path_coherence_score : number
+    confidence_decay : number
+    bottleneck_node : string
+    alternative_path_count : integer
+    interpretation : string
+}
+
+ContextNode ||--o{ ContextEdge : source_id
+ContextNode ||--o{ ContextEdge : target_id
+NodeResponse ||--o{ AnnotationResponse : node_id
+@enduml

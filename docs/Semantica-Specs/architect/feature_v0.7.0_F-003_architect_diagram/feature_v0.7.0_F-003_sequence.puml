@@ -1,0 +1,85 @@
+@startuml feature_v0.7.0_F-003_sequence
+' Runtime truth for F-003 v0.7.0 — Storage Backends
+' Reversed from code at commit 92c2578a. Cast is the participants: list of feature_v0.7.0_F-003_front-matter.yaml, name for name.
+title F-003 v0.7.0 — Storage Backends
+autonumber
+
+participant "pipeline or session" as Caller
+participant "vector_store.registry" as Registry
+participant "VectorStore facade" as Vs
+participant "FaissStore" as Faiss
+database "index file on disk" as Disk
+participant "graph_store.registry" as GraphRegistry
+
+group F-003-US1 — choose a graph, vector or triplet backend by configuration
+  Caller -> Registry : resolve backend by name, SEMANTICA_VECTOR_BACKEND
+  activate Registry
+  Registry --> Caller : store instance
+  deactivate Registry
+  Caller -> GraphRegistry : resolve graph backend, GRAPH_STORE_DEFAULT_BACKEND
+  GraphRegistry --> Caller : store instance
+end
+
+group F-003-US2 — survive a crash during a save without losing the index
+  Caller -> Vs : store_vectors
+  activate Vs
+  Vs -> Vs : allocate id, write metadata, rebuild index under one lock (semantica/vector_store/vector_store.py:569)
+  Vs --> Caller : vec_N ids
+  deactivate Vs
+  Caller -> Faiss : save_index
+  activate Faiss
+  Faiss -> Faiss : serialise ids, metadata, dimension, index_type first (semantica/vector_store/faiss_store.py:300)
+  Faiss -> Disk : write index and sidecar
+  Disk --> Faiss : written
+  Faiss --> Caller : saved
+  deactivate Faiss
+end
+
+group F-003-US3 — know a deleted vector stays deleted across a restart
+  Caller -> Faiss : delete_vectors
+  activate Faiss
+  Faiss -> Faiss : compact array, mirror list and metadata (semantica/vector_store/faiss_store.py:283)
+  Faiss -> Disk : persist deletion when the store was disk-loaded (semantica/vector_store/faiss_store.py:939)
+  Faiss --> Caller : deleted
+  deactivate Faiss
+  Caller -> Faiss : load_index after restart
+  Faiss -> Disk : read
+  Disk --> Faiss : ids and metadata
+  Faiss -> Faiss : clamp counter above every inferred vec_N (semantica/vector_store/faiss_store.py:393)
+  Faiss --> Caller : loaded, deleted vectors absent
+end
+
+group failure — serialisation raises during save
+  Faiss -> Faiss : serialise before touching any file
+  Faiss --> Caller : error, previously persisted index untouched
+end
+
+group failure — persisted counter is stale or corrupted
+  Faiss -> Faiss : clamp to the highest inferred vec_N
+  Faiss --> Caller : loaded, new ids cannot collide with survivors
+end
+
+group failure — delete runs concurrently with a read
+  Vs -> Vs : snapshot vectors and metadata together under the lock (semantica/vector_store/vector_store.py:801)
+  Vs --> Caller : consistent view, no dictionary-changed-size error
+end
+
+group failure — query vector is all zeros on a cosine index
+  Vs -> Vs : substitute a unit vector (semantica/vector_store/pinecone_store.py:746)
+  Vs --> Caller : query accepted by the vendor
+end
+
+group failure — deleted vectors would be resurrected by a process restart
+  Faiss -> Disk : persist the deletion when the store was disk-loaded (semantica/vector_store/faiss_store.py:939)
+  Faiss -> Disk : reload after restart
+  Disk --> Faiss : ids without the deleted vectors
+  Faiss --> Caller : deletion survived the restart
+end
+
+note over Vs
+  invariants: DOM-003-R1, DOM-003-R2, DOM-003-R3, DOM-003-R4, DOM-003-R5
+  id allocation: monotonic vec_N, never decremented on deletion (semantica/vector_store/vector_store.py:146)
+  timeout: none documented - retry: none documented - idempotency: none documented
+end note
+
+@enduml

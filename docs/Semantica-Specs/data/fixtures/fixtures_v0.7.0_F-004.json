@@ -1,0 +1,40 @@
+{
+  "$comment": "Fixture set for v0.7.0 F-004, reversed at commit 92c2578a. Every top-level key is an entity in schemas.json $defs. IDs and timestamps are fixed literals; no value is copied from any real system.",
+  "OntologyEntry": [
+    {
+      "uri": "https://example.invalid/ontology/reversed",
+      "name": "Reversed fixture ontology",
+      "description": null,
+      "format": "turtle",
+      "status": "external",
+      "source_url": null,
+      "version": null,
+      "class_count": 0,
+      "concept_count": 0,
+      "property_count": 0,
+      "loaded_at": "",
+      "enabled": true,
+      "tags": []
+    }
+  ],
+  "OntologyPreview": [
+    {
+      "uri": "https://example.invalid/ontology/reversed",
+      "name": "Reversed fixture ontology",
+      "description": null,
+      "namespace": null,
+      "version": null,
+      "license": null,
+      "format": "turtle",
+      "estimated_triples": 0,
+      "source_url": null
+    }
+  ],
+  "VocabularyScheme": [
+    {
+      "uri": "https://example.invalid/scheme/reversed",
+      "label": "Reversed fixture scheme",
+      "description": null
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+@startuml feature_v0.7.0_F-008_sequence
+' Runtime truth for F-008 v0.7.0 — Export and Interchange
+' Reversed from code at commit 92c2578a. Cast is the participants: list of feature_v0.7.0_F-008_front-matter.yaml, name for name.
+title F-008 v0.7.0 — Export and Interchange
+autonumber
+
+actor "Analyst" as Analyst
+participant "routes.export_import" as ExportApi
+participant "export.registry" as Registry
+participant "JsonExporter" as Json
+participant "RdfExporter" as Rdf
+participant "GraphSession" as Session
+
+group F-008-US1 — export a graph into the format my downstream tool reads
+  Analyst -> ExportApi : POST /api/export, ExportRequest
+  activate ExportApi
+  ExportApi -> Registry : resolve exporter by format
+  Registry --> ExportApi : exporter instance
+  ExportApi -> Session : read ContextNode and ContextEdge
+  Session --> ExportApi : graph data
+  ExportApi -> Rdf : serialise
+  activate Rdf
+  Rdf --> ExportApi : serialised document
+  deactivate Rdf
+  ExportApi --> Analyst : export payload
+  deactivate ExportApi
+  Analyst -> ExportApi : POST /api/export/distance-enriched, DistanceExportRequest
+  ExportApi --> Analyst : export payload with pairwise distances
+end
+
+group F-008-US2 — read an exported graph with a default-graph reader and still see its provenance
+  Analyst -> ExportApi : POST /api/export naming a graph
+  activate ExportApi
+  ExportApi -> Json : serialise into a caller-named graph
+  activate Json
+  Json -> Json : keep the caller's graph name for the caller's statements (semantica/export/json_exporter.py:514)
+  Json -> Json : write our own statements to the default graph
+  Json --> ExportApi : document
+  deactivate Json
+  ExportApi --> Analyst : default-graph reader still sees provenance
+  deactivate ExportApi
+end
+
+group failure — caller-named graph would capture the serializer's own statements
+  Json -> Json : write own statements outside the named graph
+  Json --> ExportApi : document a default-graph reader can read
+end
+
+group failure — graph-level metadata has no subject to attach to
+  Rdf -> Rdf : no document node has ever been minted (semantica/export/rdf_exporter.py:920)
+  Rdf --> ExportApi : metadata omitted rather than attached to an invented subject
+end
+
+group failure — import file cannot be read and reports the failure in its response
+  Analyst -> ExportApi : POST /api/import
+  ExportApi --> Analyst : ImportResponse carrying the failure
+end
+
+note over Json
+  invariants: DOM-008-R1, DOM-008-R2
+  open: issue #1147 supplies the default metadata subject once it lands (semantica/export/rdf_exporter.py:920)
+  timeout: none documented - retry: none documented - idempotency: none documented
+end note
+
+@enduml

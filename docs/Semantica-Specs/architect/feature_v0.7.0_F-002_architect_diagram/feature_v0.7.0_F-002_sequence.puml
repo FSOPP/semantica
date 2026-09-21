@@ -1,0 +1,88 @@
+@startuml feature_v0.7.0_F-002_sequence
+' Runtime truth for F-002 v0.7.0 — Knowledge Graph Construction and Semantic Extraction
+' Reversed from code at commit 92c2578a. Cast is the participants: list of feature_v0.7.0_F-002_front-matter.yaml, name for name.
+title F-002 v0.7.0 — Knowledge Graph Construction and Semantic Extraction
+autonumber
+
+actor "API caller" as Caller
+participant "routes.enrich" as Enrich
+participant "NamedEntityRecognizer" as Ner
+participant "RelationExtractor" as Rel
+participant "semantic_extract.cache" as Cache
+participant "schema_validator" as Validator
+participant "DuplicateDetector" as Dedup
+participant "kg.graph_builder" as Builder
+database "graph store" as Store
+
+group F-002-US1 — turn free text into entities and relations through one call
+  Caller -> Enrich : POST /api/enrich/extract, EnrichExtractRequest
+  activate Enrich
+  Enrich -> Enrich : import extractors inside the handler (semantica/explorer/routes/enrich.py:199)
+  Enrich -> Ner : extract_entities, confidence_threshold 0.7
+  activate Ner
+  Ner -> Cache : lookup
+  Cache --> Ner : hit or miss
+  Ner --> Enrich : entities
+  deactivate Ner
+  Enrich -> Rel : extract_relations, confidence_threshold 0.6
+  activate Rel
+  Rel --> Enrich : relations
+  deactivate Rel
+  Enrich -> Validator : check labels and predicates (semantica/semantic_extract/schema_validator.py:12)
+  Validator --> Enrich : accepted
+  Enrich --> Caller : EnrichExtractResponse
+  deactivate Enrich
+end
+
+group F-002-US2 — see a confidence on every extracted entity
+  Ner -> Ner : heuristic score for entities with no measured confidence (semantica/semantic_extract/ner_extractor.py:1411)
+  Ner -> Ner : filter below threshold
+  Ner --> Enrich : entities, every one carrying a confidence
+end
+
+group F-002-US3 — have duplicates detected and merged
+  Caller -> Enrich : POST /api/enrich/dedup, DedupRequest
+  activate Enrich
+  Enrich -> Dedup : detect duplicate pairs
+  activate Dedup
+  Dedup --> Enrich : candidate pairs
+  deactivate Dedup
+  Enrich --> Caller : DedupResponse
+  Caller -> Enrich : POST /api/enrich/merge, MergeRequest
+  Enrich -> Builder : merge nodes, promote synthetic endpoints (semantica/kg/graph_builder.py:225)
+  activate Builder
+  Builder -> Store : write ContextNode and ContextEdge
+  Store --> Builder : written
+  Builder --> Enrich : merge result
+  deactivate Builder
+  Enrich --> Caller : MergeResponse
+  deactivate Enrich
+end
+
+group failure — extraction extra not installed
+  Enrich -> Enrich : ImportError on handler import
+  Enrich --> Caller : service unavailable, detail names spacy and transformers (semantica/explorer/routes/enrich.py:201)
+end
+
+group failure — cache row cannot be deserialised
+  Cache -> Cache : deserialize outside the lock, before last_access (semantica/semantic_extract/cache.py:380)
+  Cache --> Ner : miss, row stays evictable
+end
+
+group failure — transaction fails on the shared connection
+  Cache -> Cache : rollback while the caller holds the lock (semantica/semantic_extract/cache.py:319)
+  Cache --> Ner : error, no later request commits over it
+end
+
+group failure — source text carries a prompt injection attempt
+  Ner -> Ner : serialise user content as JSON strings (semantica/semantic_extract/llm_extraction.py:354)
+  Ner --> Enrich : entities, injected text confined to the string
+end
+
+note over Enrich
+  invariants: DOM-002-R1, DOM-002-R2, DOM-002-R3, DOM-002-R4, DOM-002-R5
+  confidence floors: entities 0.7, relations 0.6 (semantica/explorer/routes/enrich.py:207)
+  timeout: none documented - retry: none documented - idempotency: none documented
+end note
+
+@enduml
