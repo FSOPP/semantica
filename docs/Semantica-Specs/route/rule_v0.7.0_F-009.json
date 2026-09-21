@@ -1,0 +1,60 @@
+{
+  "version": "v0.7.0",
+  "feature_id": "F-009",
+  "feature_title": "CLI MCP Server and Agent Integrations",
+  "objective": "Implement F-009 exactly as specified by the documents listed in reads.",
+  "reads": {
+    "domain": [
+      "docs/Semantica-Specs/ddd/domain_DOM-009-cli-mcp-server-and-agent-integrations.md"
+    ],
+    "prd": [
+      "docs/Semantica-Specs/PRDs/prd.md",
+      "docs/Semantica-Specs/PRDs/prd_v0.7.0_F-009-cli-mcp-server-and-agent-integrations.md"
+    ],
+    "adrs": [],
+    "architecture": [
+      "docs/Semantica-Specs/architect/architect_common.md",
+      "docs/Semantica-Specs/status-model.md",
+      "docs/Semantica-Specs/architect/feature_v0.7.0_F-009_architect_diagram/feature_v0.7.0_F-009_front-matter.yaml",
+      "docs/Semantica-Specs/architect/feature_v0.7.0_F-009_architect.md",
+      "docs/Semantica-Specs/architect/feature_v0.7.0_F-009_architect_diagram/feature_v0.7.0_F-009_sequence.puml"
+    ],
+    "data": [
+      "docs/Semantica-Specs/data/data-master-erd.md",
+      "docs/Semantica-Specs/data/schema/schemas.json",
+      "docs/Semantica-Specs/data/data-erd_v0.7.0_F-009.md",
+      "docs/Semantica-Specs/data/api-contract_v0.7.0_F-009.md",
+      "docs/Semantica-Specs/data/data-fixtures_v0.7.0_F-009.md",
+      "docs/Semantica-Specs/data/schema/erd_v0.7.0_F-009.puml",
+      "docs/Semantica-Specs/data/schema/openapi_v0.7.0_F-009.json",
+      "docs/Semantica-Specs/data/schema/asyncapi_v0.7.0_F-009.json",
+      "docs/Semantica-Specs/data/fixtures/fixtures_v0.7.0_F-009.json"
+    ],
+    "tasks": [
+      "docs/Semantica-Specs/tasks/tasks_v0.7.0_F-009.md"
+    ],
+    "tests": [
+      "docs/Semantica-Specs/tests/testing_strategy.md",
+      "docs/Semantica-Specs/tests/test_v0.7.0_F-009.md"
+    ],
+    "runbooks": []
+  },
+  "writes": {
+    "code": [],
+    "tests": []
+  },
+  "guardrails": [
+    "Do not invent requirements: if a document is silent, stop and ask.",
+    "Do not change any file under docs/ while executing this route.",
+    "Treat docs/ as read-only, data/ included: schemas, OpenAPI/AsyncAPI and fixtures are the contract, not scratch space. A shape that does not fit is a spec bug \u2014 stop and say so.",
+    "Status cells move only through docs_flow.py task, one legal transition at a time (status-model.md); a done cites evidence that passed here.",
+    "Follow architect_common.md for naming, quality and security; it overrides personal preference.",
+    "One task from tasks_v0.7.0_F-009.md at a time, in the stated order."
+  ],
+  "exit_criteria": [
+    "Every acceptance criterion in the feature PRD has a passing test.",
+    "Implemented shapes match data/schema/schemas.json; route.py reports no fixture/model mismatch.",
+    "Review checklist in architect_common.md passes.",
+    "tasks_v0.7.0_F-009.md status column is complete."
+  ]
+}

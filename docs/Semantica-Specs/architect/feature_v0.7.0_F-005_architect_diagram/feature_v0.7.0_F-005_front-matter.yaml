@@ -1,0 +1,161 @@
+# feature_v0.7.0_F-005_front-matter.yaml — instant architectural context for a coding agent.
+# Reversed from code at commit 92c2578a. Pointers and names only: every shape is defined
+# once, in data/. Unknown goes to open:, never to a plausible value.
+
+# --- identity ------------------------------------------------------------------
+id: "F-005"
+feature: "F-005"
+version: "v0.7.0"
+kind: front-matter
+title: "Context Graph and Decision Intelligence"
+status: ready            # draft | ready | accepted | superseded — ready: arch_flow.py check reports no GAP
+owner: unassigned        # no maintainer is named for this feature anywhere in the repository
+updated: "2026-09-21"
+
+# --- activation ----------------------------------------------------------------
+description: "Holds the context graph and records decisions as typed nodes with causal chains, precedents and compliance verdicts, persisted through an atomic rename."
+globs:
+  - "semantica/context/**"
+  - "semantica/evals/**"
+  - "semantica/explorer/routes/decisions.py"
+  - "semantica/explorer/routes/memories.py"
+  - "semantica/explorer/routes/analytics.py"
+
+# --- the cast: identical to the participants of feature_v0.7.0_F-005_sequence.puml ---
+participants:
+  - name: "Agent"
+    role: actor
+    path: "external"
+  - name: "Auditor"
+    role: actor
+    path: "external"
+  - name: "routes.decisions"
+    role: entrypoint
+    path: "semantica/explorer/routes/decisions.py"
+  - name: "GraphSession"
+    role: service
+    path: "semantica/explorer/session.py"
+  - name: "ContextGraph"
+    role: service
+    path: "semantica/context/context_graph.py"
+  - name: "CausalChainAnalyzer"
+    role: service
+    path: "semantica/context/causal_analyzer.py"
+  - name: "graph file on disk"
+    role: store
+    path: "semantica/context/context_graph.py"
+
+# --- where execution starts -----------------------------------------------------
+entrypoints:
+  - kind: HTTP
+    path: "semantica/explorer/routes/decisions.py"
+    symbol: "list_decisions"
+  - kind: HTTP
+    path: "semantica/explorer/routes/memories.py"
+    symbol: "list_memories"
+  - kind: HTTP
+    path: "semantica/explorer/routes/analytics.py"
+    symbol: "get_analytics"
+  - kind: library
+    path: "semantica/context/context_graph.py"
+    symbol: "ContextGraph"
+
+# --- contracts: named here, shaped in data/ -------------------------------------
+contracts:
+  endpoints:                # shaped in data/schema/openapi_v0.7.0_F-005.json
+    - "GET /api/decisions"
+    - "GET /api/decisions/causal-distance"
+    - "GET /api/decisions/{decision_id}"
+    - "GET /api/decisions/{decision_id}/chain"
+    - "GET /api/decisions/{decision_id}/precedents"
+    - "GET /api/decisions/{decision_id}/compliance"
+    - "GET /api/memories"
+    - "GET /api/analytics"
+    - "GET /api/analytics/validation"
+  events: []             # none: this feature declares no event in data/schema/asyncapi_v0.7.0_F-005.json
+  entities:                # shaped in data/schema/schemas.json
+    - "ContextNode"
+    - "DecisionResponse"
+    - "MemorySummaryResponse"
+
+depends_on:
+  internal:
+    - "semantica/kg/methods.py"
+    - "semantica/explorer/dependencies.py"
+  external:
+    - "networkx"
+
+# --- the approach, as built (requirement has not run for this feature) -----------
+approach:
+  chosen: "A decision is a context node of node_type decision, not a separate store."
+  because:
+    - "efficiency: decisions inherit graph queries, temporal validity and export unchanged"
+    - "robustness: every graph guarantee — atomic persistence, the SKOS invariant, endpoint filtering — applies to decisions without restatement"
+    - "resilience: a crash during save leaves the previous file intact, because the write is a temp file plus one rename"
+  rejected: []           # not recoverable: the repository retains no record of what was rejected
+  adr: "none"
+
+# --- what must not break --------------------------------------------------------
+invariants:
+  - "DOM-005-R1"
+  - "DOM-005-R2"
+  - "DOM-005-R3"
+  - "DOM-005-R4"
+
+failure_modes:
+  - when: "a crash or disk-full happens during a save"
+    expect: "the destination holds either the old contents or the new, never a partial write"
+  - when: "an entity-only export would emit a relationship endpoint that was filtered out"
+    expect: "drop that relationship rather than emit an absent source_id or target_id"
+  - when: "a caller writes to the graph directly, bypassing API and session checks"
+    expect: "the SKOS hierarchy invariant still holds at the lowest write layer"
+  - when: "a decision id is unknown"
+    expect: "return not found with a detail string"
+
+resilience:
+  timeout_ms: "none documented"
+  retry: "none documented"
+  idempotency: "none documented"
+  degraded: "reads keep serving from the loaded graph when persistence fails; the failed write surfaces to the caller"
+
+observability:
+  logs: []               # none: no named log event exists for this feature; get_logger is called without an event vocabulary
+  metrics: []            # none: no metrics client is imported anywhere under semantica/
+  traces: []             # none: no tracer or span is created anywhere under semantica/
+
+non_goals:
+  - "deciding anything: the policy that produces a decision lives with the caller"
+  - "storing decisions outside the context graph"
+  - "enforcing retention: no purge path exists"
+
+# --- traceability ---------------------------------------------------------------
+traceability:
+  stories:
+    - "F-005-US1"
+    - "F-005-US2"
+    - "F-005-US3"
+  rules:
+    - "DOM-005-R1"
+    - "DOM-005-R2"
+    - "DOM-005-R3"
+    - "DOM-005-R4"
+  tasks:
+    - "F-005-T1"
+    - "F-005-T2"
+    - "F-005-T3"
+    - "F-005-T4"
+    - "F-005-T5"
+    - "F-005-T6"
+  tests:
+    - "F-005-TC1"
+    - "F-005-TC2"
+    - "F-005-TC3"
+    - "F-005-TC4"
+    - "F-005-TC5"
+    - "F-005-TC6"
+  route: "docs/Semantica-Specs/route/route_v0.7.0_F-005.md"
+
+open:
+  - "Is a recorded decision immutable? No update or delete route exists, and nothing forbids an in-process rewrite."
+  - "The decision listing loads with an internal limit of 999999 before slicing in Python. What graph size is that expected to hold up at?"
+  - "What makes a decision compliant? The compliance route returns a verdict and the policy it applies is not stated in the document layer."

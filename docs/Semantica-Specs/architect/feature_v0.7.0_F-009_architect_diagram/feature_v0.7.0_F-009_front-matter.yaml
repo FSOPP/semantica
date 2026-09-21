@@ -1,0 +1,164 @@
+# feature_v0.7.0_F-009_front-matter.yaml — instant architectural context for a coding agent.
+# Reversed from code at commit 92c2578a. Pointers and names only: every shape is defined
+# once, in data/. Unknown goes to open:, never to a plausible value.
+
+# --- identity ------------------------------------------------------------------
+id: "F-009"
+feature: "F-009"
+version: "v0.7.0"
+kind: front-matter
+title: "CLI MCP Server and Agent Integrations"
+status: ready            # draft | ready | accepted | superseded — ready: arch_flow.py check reports no GAP
+owner: unassigned        # no maintainer is named for this feature anywhere in the repository
+updated: "2026-09-21"
+
+# --- activation ----------------------------------------------------------------
+description: "The non-browser ways in: 91 CLI commands in six groups, an MCP JSON-RPC server over seven tool modules, three agent-framework adapters and a second FastAPI application."
+globs:
+  - "semantica/cli.py"
+  - "semantica_mcp/**"
+  - "integrations/**"
+  - "semantica/server.py"
+  - "semantica/core/**"
+  - "semantica/llms/**"
+  - "semantica/utils/**"
+
+# --- the cast: identical to the participants of feature_v0.7.0_F-009_sequence.puml ---
+participants:
+  - name: "Operator"
+    role: actor
+    path: "external"
+  - name: "AI agent"
+    role: actor
+    path: "external"
+  - name: "semantica.cli"
+    role: entrypoint
+    path: "semantica/cli.py"
+  - name: "mcp server"
+    role: entrypoint
+    path: "semantica_mcp/mcp/server.py"
+  - name: "mcp tool module"
+    role: service
+    path: "semantica_mcp/mcp/tools"
+  - name: "integration adapter"
+    role: service
+    path: "integrations/crewai/kg_tool.py"
+  - name: "ContextGraph or KG"
+    role: store
+    path: "semantica/context/context_graph.py"
+
+# --- where execution starts -----------------------------------------------------
+entrypoints:
+  - kind: CLI
+    path: "semantica/cli.py"
+    symbol: "main"
+  - kind: MCP
+    path: "semantica_mcp/mcp/server.py"
+    symbol: "call_tool"
+  - kind: HTTP
+    path: "semantica/server.py"
+    symbol: "main"
+
+# --- contracts: named here, shaped in data/ -------------------------------------
+contracts:
+  endpoints:                # shaped in data/schema/openapi_v0.7.0_F-009.json
+    - "GET /api/info"
+    - "GET /health"
+    - "POST /build"
+    - "GET /{full_path}"
+  events: []             # none: this feature declares no event in data/schema/asyncapi_v0.7.0_F-009.json
+  entities:                # shaped in data/schema/schemas.json
+    - "ContextNode"
+    - "ContextEdge"
+
+depends_on:
+  internal:
+    - "semantica/core/config_manager.py"
+    - "semantica/utils/helpers.py"
+    - "integrations/agno/context_store.py"
+    - "integrations/google_adk/session_service.py"
+  external:
+    - "click and rich"
+    - "the Model Context Protocol transport"
+    - "agno, CrewAI and Google ADK, each through its own extra"
+
+# --- the approach, as built (requirement has not run for this feature) -----------
+approach:
+  chosen: "The CLI is the primary interface; the MCP server, the agent adapters and semantica/server.py are thinner surfaces over the same in-process objects."
+  because:
+    - "efficiency: `mcp start` and in-process dispatch share one server module rather than two implementations"
+    - "robustness: JSON Lines output puts one record per line and wraps a bare dict in a list, so callers never branch on cardinality"
+    - "resilience: a tool error surfaces the exception class name only, and concurrent tool calls on one graph take a per-graph re-entrant lock"
+  rejected: []           # not recoverable: the repository retains no record of what was rejected
+  adr: "none"
+
+# --- what must not break --------------------------------------------------------
+invariants:
+  - "DOM-009-R1"
+  - "DOM-009-R2"
+  - "DOM-009-R3"
+  - "DOM-009-R4"
+  - "DOM-009-R5"
+  - "DOM-009-R6"
+
+failure_modes:
+  - when: "a tool raises an internal error"
+    expect: "surface the exception class name and withhold the message, so no path or connection string leaks"
+  - when: "a rules file carries a present-but-non-list premises value"
+    expect: "fail with a clear error rather than reinterpreting the file as plain text"
+  - when: "two tool calls add the same node concurrently"
+    expect: "serialise them on the graph's re-entrant lock so the duplicate is skipped once"
+  - when: "an agent framework emits a partial or streaming event"
+    expect: "do not persist it, matching the framework's own base behaviour"
+  - when: "an error message is built from many unrecognised keys"
+    expect: "truncate each key and cap the key count so the message stays bounded"
+
+resilience:
+  timeout_ms: "none documented"
+  retry: "none documented"
+  idempotency: "repeated graph tool calls are idempotent: duplicate nodes and edges are skipped"
+  degraded: "an adapter whose framework extra is absent is simply unavailable; the CLI and MCP server are unaffected"
+
+observability:
+  logs: []               # none: no named log event exists for this feature; get_logger is called without an event vocabulary
+  metrics: []            # none: no metrics client is imported anywhere under semantica/
+  traces: []             # none: no tracer or span is created anywhere under semantica/
+
+non_goals:
+  - "serving the Explorer UI, which is F-007"
+  - "defining what the tools operate on, which is F-002 and F-005"
+  - "versioning the MCP tool contract: tools are dispatched by name with no negotiation"
+
+# --- traceability ---------------------------------------------------------------
+traceability:
+  stories:
+    - "F-009-US1"
+    - "F-009-US2"
+    - "F-009-US3"
+    - "F-009-US4"
+  rules:
+    - "DOM-009-R1"
+    - "DOM-009-R2"
+    - "DOM-009-R3"
+    - "DOM-009-R4"
+    - "DOM-009-R5"
+    - "DOM-009-R6"
+  tasks:
+    - "F-009-T1"
+    - "F-009-T2"
+    - "F-009-T3"
+    - "F-009-T4"
+    - "F-009-T5"
+    - "F-009-T6"
+  tests:
+    - "F-009-TC1"
+    - "F-009-TC2"
+    - "F-009-TC3"
+    - "F-009-TC4"
+    - "F-009-TC5"
+  route: "docs/Semantica-Specs/route/route_v0.7.0_F-009.md"
+
+open:
+  - "Which of the 91 CLI commands are the supported surface? None is marked deprecated and one is explicitly hidden."
+  - "Is semantica/server.py supported alongside the Explorer app? It serves a second /api/info and a differently worded health payload."
+  - "What is the MCP tool contract's compatibility promise? Tools are dispatched by name with no version negotiation."

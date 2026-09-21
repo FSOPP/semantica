@@ -1,0 +1,82 @@
+@startuml feature_v0.7.0_F-006_sequence
+' Runtime truth for F-006 v0.7.0 — Provenance Reasoning and Explainability
+' Reversed from code at commit 92c2578a. Cast is the participants: list of feature_v0.7.0_F-006_front-matter.yaml, name for name.
+title F-006 v0.7.0 — Provenance Reasoning and Explainability
+autonumber
+
+actor "Analyst" as Analyst
+participant "routes.enrich" as Enrich
+participant "routes.provenance" as Prov
+participant "SPARQLReasoner" as Reasoner
+participant "truth maintenance session" as Tms
+participant "ProvenanceManager" as Manager
+participant "pipeline.execution_engine" as Engine
+database "graph store" as Store
+
+group F-006-US1 — see where an inferred fact came from
+  Analyst -> Prov : GET /api/provenance
+  activate Prov
+  Prov -> Manager : read records
+  activate Manager
+  Manager --> Prov : PROV-O statements with hadRole (semantica/provenance/manager.py:1290)
+  deactivate Manager
+  Prov --> Analyst : provenance payload
+  Analyst -> Prov : GET /api/provenance/report
+  Prov --> Analyst : report
+  deactivate Prov
+end
+
+group F-006-US2 — run rules over the graph and get the inferences back
+  Analyst -> Enrich : POST /api/reason, ReasoningRequest
+  activate Enrich
+  Enrich -> Tms : construct session, snapshot rules (semantica/reasoning/truth_maintenance_types.py:61)
+  activate Tms
+  Tms --> Enrich : session
+  deactivate Tms
+  Enrich -> Reasoner : run rules
+  activate Reasoner
+  Reasoner -> Reasoner : iterate to fixpoint, one productive pass per rule (semantica/reasoning/sparql_reasoner.py:893)
+  Reasoner --> Enrich : inferences
+  deactivate Reasoner
+  Enrich --> Analyst : ReasoningResponse
+  deactivate Enrich
+end
+
+group F-006-US3 — have inferences visible to a native backend query
+  Analyst -> Reasoner : native SPARQL query
+  activate Reasoner
+  Reasoner -> Reasoner : materialise rule-derived triples first (semantica/reasoning/sparql_reasoner.py:536)
+  Reasoner -> Store : send raw query text
+  Store --> Reasoner : rows including inferred answers
+  Reasoner --> Analyst : result set
+  deactivate Reasoner
+end
+
+group failure — stage handler returns the wrong type
+  Engine -> Engine : contract check (semantica/pipeline/execution_engine.py:395)
+  Engine --> Analyst : deterministic failure, retry policy never consulted
+end
+
+group failure — rule was never materialised before a native query
+  Reasoner -> Store : raw query text
+  Store --> Reasoner : rows without the inferred answers
+  Reasoner -> Reasoner : materialise, then re-run
+end
+
+group failure — original Rule object mutated after session construction
+  Tms -> Tms : immutable snapshot taken at construction
+  Tms --> Enrich : running session unaffected
+end
+
+group failure — used entity is the parent that already carries wasDerivedFrom
+  Manager -> Manager : compare used entity with parent_entity_id (semantica/provenance/manager.py:1360)
+  Manager --> Prov : triple emitted once
+end
+
+note over Reasoner
+  invariants: DOM-006-R1, DOM-006-R2, DOM-006-R3, DOM-006-R4, DOM-006-R5
+  retry: contract violations are never retried (semantica/pipeline/execution_engine.py:395)
+  timeout: none documented - idempotency: none documented
+end note
+
+@enduml

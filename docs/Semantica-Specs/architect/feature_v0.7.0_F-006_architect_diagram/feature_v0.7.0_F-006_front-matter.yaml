@@ -1,0 +1,159 @@
+# feature_v0.7.0_F-006_front-matter.yaml — instant architectural context for a coding agent.
+# Reversed from code at commit 92c2578a. Pointers and names only: every shape is defined
+# once, in data/. Unknown goes to open:, never to a plausible value.
+
+# --- identity ------------------------------------------------------------------
+id: "F-006"
+feature: "F-006"
+version: "v0.7.0"
+kind: front-matter
+title: "Provenance Reasoning and Explainability"
+status: ready            # draft | ready | accepted | superseded — ready: arch_flow.py check reports no GAP
+owner: unassigned        # no maintainer is named for this feature anywhere in the repository
+updated: "2026-09-21"
+
+# --- activation ----------------------------------------------------------------
+description: "Emits W3C PROV-O records for every stage and runs Rete, Datalog and SPARQL inference to fixpoint, materialising derived triples so a native query can see them."
+globs:
+  - "semantica/provenance/**"
+  - "semantica/reasoning/**"
+  - "semantica/pipeline/**"
+  - "semantica/explorer/routes/provenance.py"
+
+# --- the cast: identical to the participants of feature_v0.7.0_F-006_sequence.puml ---
+participants:
+  - name: "Analyst"
+    role: actor
+    path: "external"
+  - name: "routes.enrich"
+    role: entrypoint
+    path: "semantica/explorer/routes/enrich.py"
+  - name: "routes.provenance"
+    role: entrypoint
+    path: "semantica/explorer/routes/provenance.py"
+  - name: "SPARQLReasoner"
+    role: service
+    path: "semantica/reasoning/sparql_reasoner.py"
+  - name: "truth maintenance session"
+    role: service
+    path: "semantica/reasoning/truth_maintenance_types.py"
+  - name: "ProvenanceManager"
+    role: service
+    path: "semantica/provenance/manager.py"
+  - name: "pipeline.execution_engine"
+    role: service
+    path: "semantica/pipeline/execution_engine.py"
+  - name: "graph store"
+    role: store
+    path: "semantica/graph_store/graph_store.py"
+
+# --- where execution starts -----------------------------------------------------
+entrypoints:
+  - kind: HTTP
+    path: "semantica/explorer/routes/provenance.py"
+    symbol: "get_provenance"
+  - kind: HTTP
+    path: "semantica/explorer/routes/enrich.py"
+    symbol: "run_reasoning"
+  - kind: library
+    path: "semantica/provenance/manager.py"
+    symbol: "ProvenanceManager"
+
+# --- contracts: named here, shaped in data/ -------------------------------------
+contracts:
+  endpoints:                # shaped in data/schema/openapi_v0.7.0_F-006.json
+    - "GET /api/provenance"
+    - "GET /api/provenance/report"
+    - "POST /api/reason"
+  events: []             # none: this feature declares no event in data/schema/asyncapi_v0.7.0_F-006.json
+  entities:                # shaped in data/schema/schemas.json
+    - "ContextNode"
+    - "ContextEdge"
+
+depends_on:
+  internal:
+    - "semantica/triplet_store/query_engine.py"
+    - "semantica/kg/methods.py"
+  external:
+    - "rdflib"
+
+# --- the approach, as built (requirement has not run for this feature) -----------
+approach:
+  chosen: "Provenance and reasoning as one feature, both answering where a triple came from: PROV-O records with roles, and inference materialised before native execution."
+  because:
+    - "efficiency: fixpoint iteration runs at most one productive pass per rule"
+    - "robustness: rule snapshots are immutable for the life of a session, so later mutation cannot change a running inference"
+    - "resilience: contract violations are classified as deterministic failures and never consume a retry"
+  rejected: []           # not recoverable: the repository retains no record of what was rejected
+  adr: "none"
+
+# --- what must not break --------------------------------------------------------
+invariants:
+  - "DOM-006-R1"
+  - "DOM-006-R2"
+  - "DOM-006-R3"
+  - "DOM-006-R4"
+  - "DOM-006-R5"
+
+failure_modes:
+  - when: "a stage handler returns the wrong type"
+    expect: "fail deterministically without consulting the retry policy"
+  - when: "a rule was never materialised before a native backend query"
+    expect: "materialise the derived triples, then execute, so inferred answers are visible"
+  - when: "the original Rule object is mutated after session construction"
+    expect: "the running session keeps its immutable snapshot"
+  - when: "the used entity is the parent that already carries wasDerivedFrom"
+    expect: "emit the triple once, not twice"
+
+resilience:
+  timeout_ms: "none documented"
+  retry: "retried by the pipeline's failure handler, except contract violations, which are never retried"
+  idempotency: "none documented"
+  degraded: "reasoning returns service-unavailable when its extra is absent; provenance reads keep serving"
+
+observability:
+  logs: []               # none: no named log event exists for this feature; get_logger is called without an event vocabulary
+  metrics: []            # none: no metrics client is imported anywhere under semantica/
+  traces: []             # none: no tracer or span is created anywhere under semantica/
+
+non_goals:
+  - "building the graph that is reasoned over, which is F-002"
+  - "deciding what provenance means to a regulator"
+  - "storing provenance outside the graph"
+
+# --- traceability ---------------------------------------------------------------
+traceability:
+  stories:
+    - "F-006-US1"
+    - "F-006-US2"
+    - "F-006-US3"
+  rules:
+    - "DOM-006-R1"
+    - "DOM-006-R2"
+    - "DOM-006-R3"
+    - "DOM-006-R4"
+    - "DOM-006-R5"
+  tasks:
+    - "F-006-T1"
+    - "F-006-T2"
+    - "F-006-T3"
+    - "F-006-T4"
+    - "F-006-T5"
+    - "F-006-T6"
+  tests:
+    - "F-006-TC1"
+    - "F-006-TC2"
+    - "F-006-TC3"
+    - "F-006-TC4"
+    - "F-006-TC5"
+    - "F-006-TC6"
+    - "F-006-TC7"
+    - "F-006-TC8"
+    - "F-006-TC9"
+    - "F-006-TC10"
+  route: "docs/Semantica-Specs/route/route_v0.7.0_F-006.md"
+
+open:
+  - "How long are provenance records kept, and may they ever be deleted? No purge path exists."
+  - "Is provenance mandatory or best-effort? Every stage has a provenance hook and nothing forces one to run."
+  - "Which PROV-O profile is claimed for interoperability? The code emits triples without declaring conformance."

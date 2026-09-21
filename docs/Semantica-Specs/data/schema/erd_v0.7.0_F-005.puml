@@ -1,0 +1,35 @@
+@startuml erd_v0.7.0_F-005
+' Reversed from schemas.json at commit 92c2578a. Entities are introduced in erd_master.puml.
+hide circle
+skinparam linetype ortho
+
+entity "ContextNode" as ContextNode {
+  * node_id : string
+  * node_type : string
+  * content : string
+    metadata : object
+    properties : object
+    valid_from : string
+    valid_until : string
+}
+
+entity "DecisionResponse" as DecisionResponse {
+  * decision_id : string
+    category : string
+    scenario : string
+    reasoning : string
+    outcome : string
+    confidence : number
+    timestamp : string
+    metadata : object
+}
+
+entity "MemorySummaryResponse" as MemorySummaryResponse {
+  * id : string
+  * type : string
+  * excerpt : string
+    updated_at : string
+}
+
+ContextNode ||--|| DecisionResponse : node_type='decision'
+@enduml

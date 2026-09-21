@@ -1,0 +1,5 @@
+@startuml erd_v0.7.0_F-001
+' F-001 owns, reads and writes none of the registry entities at commit 92c2578a.
+' This emptiness is the reversed finding, not an omission.
+hide circle
+@enduml

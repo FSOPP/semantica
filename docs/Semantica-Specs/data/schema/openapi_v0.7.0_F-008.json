@@ -1,0 +1,80 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Semantica \u2014 F-008 Export and Interchange",
+    "version": "v0.7.0",
+    "description": "Reversed from route decorators at commit 92c2578a. Shapes are $ref'd from schemas.json; entity definitions are never inlined here."
+  },
+  "paths": {
+    "/api/import": {
+      "post": {
+        "operationId": "import_file",
+        "summary": "Reversed from semantica/explorer/routes/export_import.py:65",
+        "responses": {
+          "200": {
+            "description": "Declared response model: ImportResponse"
+          }
+        }
+      }
+    },
+    "/api/export": {
+      "post": {
+        "operationId": "export_graph",
+        "summary": "Reversed from semantica/explorer/routes/export_import.py:261",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model ExportRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/export/distance-enriched": {
+      "post": {
+        "operationId": "export_distance_enriched",
+        "summary": "Reversed from semantica/explorer/routes/export_import.py:381",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model DistanceExportRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    },
+    "schemas": {
+      "ContextEdge": {
+        "$ref": "schemas.json#/$defs/ContextEdge"
+      },
+      "ContextNode": {
+        "$ref": "schemas.json#/$defs/ContextNode"
+      }
+    }
+  }
+}

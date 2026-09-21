@@ -1,0 +1,30 @@
+@startuml erd_v0.7.0_F-003
+' Reversed from schemas.json at commit 92c2578a. Entities are introduced in erd_master.puml.
+hide circle
+skinparam linetype ortho
+
+entity "ContextEdge" as ContextEdge {
+  * source_id : string
+  * target_id : string
+  * edge_type : string
+    edge_id : string
+    family_id : string
+    weight : number
+    metadata : object
+    valid_from : string
+    valid_until : string
+}
+
+entity "ContextNode" as ContextNode {
+  * node_id : string
+  * node_type : string
+  * content : string
+    metadata : object
+    properties : object
+    valid_from : string
+    valid_until : string
+}
+
+ContextNode ||--o{ ContextEdge : source_id
+ContextNode ||--o{ ContextEdge : target_id
+@enduml

@@ -1,0 +1,158 @@
+# feature_v0.7.0_F-002_front-matter.yaml — instant architectural context for a coding agent.
+# Reversed from code at commit 92c2578a. Pointers and names only: every shape is defined
+# once, in data/. Unknown goes to open:, never to a plausible value.
+
+# --- identity ------------------------------------------------------------------
+id: "F-002"
+feature: "F-002"
+version: "v0.7.0"
+kind: front-matter
+title: "Knowledge Graph Construction and Semantic Extraction"
+status: ready            # draft | ready | accepted | superseded — ready: arch_flow.py check reports no GAP
+owner: unassigned        # no maintainer is named for this feature anywhere in the repository
+updated: "2026-09-21"
+
+# --- activation ----------------------------------------------------------------
+description: "Turns text into entities and relations above configured confidence floors, validates them against the schema, detects duplicates and builds the graph."
+globs:
+  - "semantica/semantic_extract/**"
+  - "semantica/kg/**"
+  - "semantica/conflicts/**"
+  - "semantica/deduplication/**"
+  - "semantica/embeddings/**"
+  - "semantica/explorer/routes/enrich.py"
+
+# --- the cast: identical to the participants of feature_v0.7.0_F-002_sequence.puml ---
+participants:
+  - name: "API caller"
+    role: actor
+    path: "external"
+  - name: "routes.enrich"
+    role: entrypoint
+    path: "semantica/explorer/routes/enrich.py"
+  - name: "NamedEntityRecognizer"
+    role: service
+    path: "semantica/semantic_extract/ner_extractor.py"
+  - name: "RelationExtractor"
+    role: service
+    path: "semantica/semantic_extract/relation_extractor.py"
+  - name: "semantic_extract.cache"
+    role: store
+    path: "semantica/semantic_extract/cache.py"
+  - name: "schema_validator"
+    role: service
+    path: "semantica/semantic_extract/schema_validator.py"
+  - name: "DuplicateDetector"
+    role: service
+    path: "semantica/deduplication/duplicate_detector.py"
+  - name: "kg.graph_builder"
+    role: service
+    path: "semantica/kg/graph_builder.py"
+  - name: "graph store"
+    role: store
+    path: "semantica/graph_store/graph_store.py"
+
+# --- where execution starts -----------------------------------------------------
+entrypoints:
+  - kind: HTTP
+    path: "semantica/explorer/routes/enrich.py"
+    symbol: "extract_entities"
+  - kind: HTTP
+    path: "semantica/explorer/routes/enrich.py"
+    symbol: "detect_duplicates"
+  - kind: HTTP
+    path: "semantica/explorer/routes/enrich.py"
+    symbol: "merge_nodes"
+
+# --- contracts: named here, shaped in data/ -------------------------------------
+contracts:
+  endpoints:                # shaped in data/schema/openapi_v0.7.0_F-002.json
+    - "POST /api/enrich/extract"
+    - "POST /api/enrich/links"
+    - "POST /api/enrich/dedup"
+    - "POST /api/enrich/merge"
+  events: []             # none: this feature declares no event in data/schema/asyncapi_v0.7.0_F-002.json
+  entities:                # shaped in data/schema/schemas.json
+    - "ContextNode"
+    - "ContextEdge"
+
+depends_on:
+  internal:
+    - "semantica/llms/openai.py"
+    - "semantica/graph_store/registry.py"
+    - "semantica/utils/logging.py"
+  external:
+    - "spacy and transformers, through the extraction extra"
+    - "an LLM provider account for llm_extraction paths"
+
+# --- the approach, as built (requirement has not run for this feature) -----------
+approach:
+  chosen: "Provider-pluggable extraction behind a locked cache, with graph construction as a separate stage that tolerates synthetic endpoints."
+  because:
+    - "efficiency: the cache avoids re-extracting text already seen, and the graph builder rebuilds only relationships carrying a synthetic endpoint"
+    - "robustness: every emitted entity carries a confidence, and labels and predicates are schema-validated before the graph is touched"
+    - "resilience: a missing extraction extra degrades one route rather than failing application startup"
+  rejected: []           # not recoverable: the repository retains no record of what was rejected
+  adr: "ADR-0004"
+
+# --- what must not break --------------------------------------------------------
+invariants:
+  - "DOM-002-R1"
+  - "DOM-002-R2"
+  - "DOM-002-R3"
+  - "DOM-002-R4"
+  - "DOM-002-R5"
+
+failure_modes:
+  - when: "the extraction extra is not installed"
+    expect: "refuse this route with a service-unavailable error naming spacy and transformers; every other route keeps serving"
+  - when: "a cache row cannot be deserialised"
+    expect: "deserialize outside the lock and before last_access, so the corrupt row stays evictable"
+  - when: "a transaction fails on the shared connection"
+    expect: "roll back while the caller holds the lock, so no later request commits over it"
+  - when: "source text carries a prompt-injection attempt"
+    expect: "serialise user content as JSON strings so it cannot escape the prompt string"
+
+resilience:
+  timeout_ms: "none documented"
+  retry: "none documented"
+  idempotency: "none documented"
+  degraded: "extraction and reasoning routes return service-unavailable when their extra is absent; the graph API is unaffected"
+
+observability:
+  logs: []               # none: no named log event exists for this feature; get_logger is called without an event vocabulary
+  metrics: []            # none: no metrics client is imported anywhere under semantica/
+  traces: []             # none: no tracer or span is created anywhere under semantica/
+
+non_goals:
+  - "ingesting or parsing source material, which is F-001"
+  - "persisting the graph to a backend, which is F-003"
+  - "explaining why a triple exists, which is F-006"
+
+# --- traceability ---------------------------------------------------------------
+traceability:
+  stories:
+    - "F-002-US1"
+    - "F-002-US2"
+    - "F-002-US3"
+  rules:
+    - "DOM-002-R1"
+    - "DOM-002-R2"
+    - "DOM-002-R3"
+    - "DOM-002-R4"
+    - "DOM-002-R5"
+  tasks:
+    - "F-002-T1"
+    - "F-002-T2"
+    - "F-002-T3"
+    - "F-002-T4"
+    - "F-002-T5"
+    - "F-002-T6"
+  tests:
+    - "F-002-TC1"
+  route: "docs/Semantica-Specs/route/route_v0.7.0_F-002.md"
+
+open:
+  - "Where do the 0.7 and 0.6 confidence floors come from? Both are literals in the route handler, unconfigurable and unexplained."
+  - "What extraction accuracy is this expected to reach? No evaluation threshold or benchmark target is expressed in code."
+  - "Is a synthetic endpoint a permanent graph citizen or a repair artefact meant to be resolved later?"

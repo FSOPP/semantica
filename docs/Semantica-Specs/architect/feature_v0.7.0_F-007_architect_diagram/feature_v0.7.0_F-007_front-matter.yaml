@@ -1,0 +1,202 @@
+# feature_v0.7.0_F-007_front-matter.yaml — instant architectural context for a coding agent.
+# Reversed from code at commit 92c2578a. Pointers and names only: every shape is defined
+# once, in data/. Unknown goes to open:, never to a plausible value.
+
+# --- identity ------------------------------------------------------------------
+id: "F-007"
+feature: "F-007"
+version: "v0.7.0"
+kind: front-matter
+title: "Knowledge Explorer UI and Graph API"
+status: ready            # draft | ready | accepted | superseded — ready: arch_flow.py check reports no GAP
+owner: unassigned        # no maintainer is named for this feature anywhere in the repository
+updated: "2026-09-21"
+
+# --- activation ----------------------------------------------------------------
+description: "Serves the bundled React Explorer and the read-mostly graph, temporal, markdown and annotation APIs behind an API key, with cursor pagination and a guarded temporal scrubber."
+globs:
+  - "explorer/src/**"
+  - "semantica/explorer/app.py"
+  - "semantica/explorer/ws.py"
+  - "semantica/explorer/session.py"
+  - "semantica/explorer/routes/graph.py"
+  - "semantica/explorer/routes/temporal.py"
+  - "semantica/explorer/routes/markdown.py"
+  - "semantica/explorer/routes/annotations.py"
+  - "semantica/visualization/**"
+
+# --- the cast: identical to the participants of feature_v0.7.0_F-007_sequence.puml ---
+participants:
+  - name: "Explorer user"
+    role: actor
+    path: "external"
+  - name: "explorer SPA"
+    role: entrypoint
+    path: "explorer/src/App.tsx"
+  - name: "explorer app"
+    role: entrypoint
+    path: "semantica/explorer/app.py"
+  - name: "routes.graph"
+    role: service
+    path: "semantica/explorer/routes/graph.py"
+  - name: "routes.temporal"
+    role: service
+    path: "semantica/explorer/routes/temporal.py"
+  - name: "routes.markdown"
+    role: service
+    path: "semantica/explorer/routes/markdown.py"
+  - name: "routes.annotations"
+    role: service
+    path: "semantica/explorer/routes/annotations.py"
+  - name: "GraphSession"
+    role: store
+    path: "semantica/explorer/session.py"
+
+# --- where execution starts -----------------------------------------------------
+entrypoints:
+  - kind: HTTP
+    path: "semantica/explorer/app.py"
+    symbol: "create_app"
+  - kind: UI
+    path: "explorer/src/main.tsx"
+    symbol: "main"
+  - kind: HTTP
+    path: "semantica/explorer/routes/graph.py"
+    symbol: "list_nodes"
+
+# --- contracts: named here, shaped in data/ -------------------------------------
+contracts:
+  endpoints:                # shaped in data/schema/openapi_v0.7.0_F-007.json
+    - "GET /"
+    - "GET /api/health"
+    - "GET /api/info"
+    - "GET /{full_path}"
+    - "GET /api/graph/nodes"
+    - "GET /api/graph/node"
+    - "GET /api/graph/node/{node_id}"
+    - "GET /api/graph/node/{node_id}/neighbors"
+    - "GET /api/graph/edges"
+    - "GET /api/graph/path"
+    - "GET /api/graph/node/{node_id}/path"
+    - "POST /api/graph/search"
+    - "POST /api/graph/distance-matrix"
+    - "GET /api/graph/semantic-neighborhood"
+    - "GET /api/graph/node/{node_id}/semantic-neighborhood"
+    - "GET /api/graph/stats"
+    - "GET /api/temporal/snapshot"
+    - "GET /api/temporal/diff"
+    - "GET /api/temporal/patterns"
+    - "GET /api/temporal/bounds"
+    - "GET /api/temporal/distance-history"
+    - "GET /api/markdown/{kind}/{resource_id}"
+    - "PUT /api/markdown/{kind}/{resource_id}"
+    - "GET /api/annotations"
+    - "POST /api/annotations"
+    - "DELETE /api/annotations/{annotation_id}"
+  events:                # shaped in data/schema/asyncapi_v0.7.0_F-007.json
+    - "graph-updates (WebSocket, installed at semantica/explorer/app.py:188; envelope not declared in the repository)"
+  entities:                # shaped in data/schema/schemas.json
+    - "NodeResponse"
+    - "EdgeResponse"
+    - "PathResponse"
+    - "GraphStatsResponse"
+    - "AnnotationCreate"
+    - "AnnotationResponse"
+
+depends_on:
+  internal:
+    - "semantica/explorer/dependencies.py"
+    - "semantica/context/context_graph.py"
+  external:
+    - "FastAPI and uvicorn, through the explorer extra"
+    - "React, Vite and TypeScript for the bundled SPA"
+
+# --- the approach, as built (requirement has not run for this feature) -----------
+approach:
+  chosen: "A read-mostly viewer: 23 of 26 routes are reads, with the hardest logic client-side in the temporal scrubber's request lifecycle."
+  because:
+    - "efficiency: cursor pagination bounded at 5000 per page keeps a large graph browsable without loading it"
+    - "robustness: a stale markdown revision is refused with a conflict rather than overwriting another editor"
+    - "resilience: a missing frontend bundle serves an instructional page instead of a server error, and a failed snapshot stays retryable"
+  rejected: []           # not recoverable: the repository retains no record of what was rejected
+  adr: "ADR-0002"
+
+# --- what must not break --------------------------------------------------------
+invariants:
+  - "DOM-007-R1"
+  - "DOM-007-R2"
+  - "DOM-007-R3"
+  - "DOM-007-R4"
+  - "DOM-007-R5"
+  - "DOM-007-R6"
+
+failure_modes:
+  - when: "the scrubber polls the same position while idle or playing"
+    expect: "keep one in-flight request per position and deduplicate identical polls"
+  - when: "the frontend bundle is absent from the install"
+    expect: "serve an instructional HTML page, not a server error"
+  - when: "a snapshot request fails or is cancelled"
+    expect: "leave the position retryable when the scrubber returns to it"
+  - when: "a snapshot response arrives after the scrubber moved"
+    expect: "discard it; only a response for the current position is applied"
+  - when: "a markdown revision moved underneath the editor"
+    expect: "refuse with a conflict and keep the user's draft with a recovery path"
+  - when: "an annotation targets a node that does not exist"
+    expect: "return not found with a detail string"
+  - when: "a request under api/ reaches the SPA catch-all"
+    expect: "return not found rather than the SPA shell"
+
+resilience:
+  timeout_ms: "none documented"
+  retry: "client-side: a failed snapshot is retried when its scrubber position is revisited"
+  idempotency: "none documented"
+  degraded: "the REST API keeps serving when the SPA bundle is missing; annotations are in-memory and are lost on restart"
+
+observability:
+  logs: []               # none: no named log event exists for this feature; get_logger is called without an event vocabulary
+  metrics: []            # none: no metrics client is imported anywhere under semantica/
+  traces: []             # none: no tracer or span is created anywhere under semantica/
+
+non_goals:
+  - "writing to the graph beyond annotations and markdown applies"
+  - "persisting annotations: they live on the in-memory session"
+  - "ontology editing views, which are F-004"
+
+# --- traceability ---------------------------------------------------------------
+traceability:
+  stories:
+    - "F-007-US1"
+    - "F-007-US2"
+    - "F-007-US3"
+    - "F-007-US4"
+  rules:
+    - "DOM-007-R1"
+    - "DOM-007-R2"
+    - "DOM-007-R3"
+    - "DOM-007-R4"
+    - "DOM-007-R5"
+    - "DOM-007-R6"
+  tasks:
+    - "F-007-T1"
+    - "F-007-T2"
+    - "F-007-T3"
+    - "F-007-T4"
+    - "F-007-T5"
+    - "F-007-T6"
+    - "F-007-T7"
+  tests:
+    - "F-007-TC1"
+    - "F-007-TC2"
+    - "F-007-TC3"
+    - "F-007-TC4"
+    - "F-007-TC5"
+    - "F-007-TC6"
+    - "F-007-TC7"
+    - "F-007-TC8"
+    - "F-007-TC9"
+  route: "docs/Semantica-Specs/route/route_v0.7.0_F-007.md"
+
+open:
+  - "Are annotations expected to persist? They live on the in-memory session and disappear on restart."
+  - "What does visibility mean on an annotation? It defaults to public and no code reads it to restrict anything."
+  - "How many nodes is the viewer expected to render? The page limit caps at 5000 with no stated client-side ceiling."

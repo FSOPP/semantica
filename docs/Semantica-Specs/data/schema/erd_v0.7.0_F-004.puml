@@ -1,0 +1,40 @@
+@startuml erd_v0.7.0_F-004
+' Reversed from schemas.json at commit 92c2578a. Entities are introduced in erd_master.puml.
+hide circle
+skinparam linetype ortho
+
+entity "OntologyEntry" as OntologyEntry {
+  * uri : string
+  * name : string
+    description : string
+    format : string
+    status : string
+    source_url : string
+    version : string
+    class_count : integer
+    concept_count : integer
+    property_count : integer
+    loaded_at : string
+    enabled : boolean
+    tags : array
+}
+
+entity "OntologyPreview" as OntologyPreview {
+  * uri : string
+  * name : string
+    description : string
+    namespace : string
+    version : string
+    license : string
+  * format : string
+    estimated_triples : integer
+    source_url : string
+}
+
+entity "VocabularyScheme" as VocabularyScheme {
+  * uri : string
+  * label : string
+    description : string
+}
+
+@enduml

@@ -1,0 +1,10 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "Semantica \u2014 F-004 Ontology and Vocabulary Management",
+    "version": "v0.7.0",
+    "description": "No broker channel was found in this feature's non-test code at commit 92c2578a. Empty channels is the reversed finding, not an omission."
+  },
+  "channels": {},
+  "operations": {}
+}

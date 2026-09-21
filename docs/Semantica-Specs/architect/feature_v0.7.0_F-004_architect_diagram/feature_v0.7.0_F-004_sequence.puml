@@ -1,0 +1,106 @@
+@startuml feature_v0.7.0_F-004_sequence
+' Runtime truth for F-004 v0.7.0 — Ontology and Vocabulary Management
+' Reversed from code at commit 92c2578a. Cast is the participants: list of feature_v0.7.0_F-004_front-matter.yaml, name for name.
+title F-004 v0.7.0 — Ontology and Vocabulary Management
+autonumber
+
+actor "Ontology editor" as Editor
+actor "Approver" as Approver
+participant "routes.ontology" as Onto
+participant "ontology engine" as Engine
+participant "SHACL validator" as Shacl
+participant "ontology registry" as Reg
+database "context graph" as Graph
+
+group F-004-US1 — preview an ontology before loading it
+  Editor -> Onto : POST /api/ontology/preview, PreviewOntologyRequest
+  activate Onto
+  Onto -> Engine : parse source without loading
+  activate Engine
+  Engine --> Onto : OntologyPreview
+  deactivate Engine
+  Onto --> Editor : OntologyPreview
+  deactivate Onto
+  Editor -> Onto : POST /api/ontology/load, LoadOntologyRequest
+  activate Onto
+  Onto -> Reg : admit entry
+  Reg -> Graph : write SKOS hierarchy through the lowest write layer (semantica/context/context_graph.py:759)
+  Graph --> Reg : written
+  Reg --> Onto : OntologyEntry
+  Onto --> Editor : LoadOntologyResponse
+  deactivate Onto
+  Editor -> Onto : GET /api/ontology/entity/{entity_uri}
+  activate Onto
+  Onto -> Reg : resolve owning ontology, the authoritative verdict (semantica/explorer/routes/ontology.py:2010)
+  Reg --> Onto : owning_ontology
+  Onto --> Editor : EntityDetailResponse
+  deactivate Onto
+end
+
+group F-004-US2 — work on a draft and submit it as a proposal
+  Editor -> Onto : PATCH /api/ontology/draft
+  activate Onto
+  Onto --> Editor : draft_id
+  Editor -> Onto : GET /api/ontology/draft/{draft_id}
+  Onto --> Editor : draft
+  Editor -> Onto : POST /api/ontology/propose
+  Onto --> Editor : proposal_id
+  deactivate Onto
+end
+
+group F-004-US3 — approve, reject or comment on a proposal
+  Approver -> Onto : GET /api/ontology/proposals
+  activate Onto
+  Onto --> Approver : proposal list
+  Approver -> Onto : POST /api/ontology/proposals/{proposal_id}/approve
+  Onto --> Approver : approved
+  Approver -> Onto : POST /api/ontology/proposals/{proposal_id}/publish
+  Onto -> Reg : publish version
+  Reg --> Onto : published
+  Onto --> Approver : published
+  deactivate Onto
+end
+
+group F-004-US4 — validate data against generated SHACL shapes within bounded cost
+  Editor -> Onto : POST /api/ontology/shacl/generate, ShaclGenerateRequest
+  activate Onto
+  Onto -> Engine : generate shapes
+  Engine --> Onto : shape graph
+  Onto --> Editor : ShaclGenerateResponse
+  Editor -> Onto : POST /api/ontology/shacl/validate
+  Onto -> Shacl : validate within the four ceilings
+  activate Shacl
+  Shacl --> Onto : conformance report
+  deactivate Shacl
+  Onto --> Editor : validation report
+  deactivate Onto
+end
+
+group failure — turtle payload above 262144 bytes
+  Onto -> Onto : byte-length check (semantica/explorer/routes/ontology.py:2976)
+  Onto --> Editor : refused, detail names SEMANTICA_MAX_SHACL_TURTLE_BYTES
+end
+
+group failure — shape graph above 1000 triples
+  Onto -> Onto : triple count check (semantica/explorer/routes/ontology.py:2994)
+  Onto --> Editor : refused, detail names SEMANTICA_MAX_SHACL_TRIPLES
+end
+
+group failure — validation exceeds 15.0 seconds
+  Onto -> Shacl : validate
+  Shacl --> Onto : timeout at SEMANTICA_MAX_SHACL_TIMEOUT
+  Onto --> Editor : request aborted
+end
+
+group failure — more than 4 validations in flight
+  Onto -> Onto : concurrency gate at SEMANTICA_MAX_SHACL_CONCURRENCY (semantica/explorer/routes/ontology.py:147)
+  Onto --> Editor : queued or refused
+end
+
+note over Onto
+  invariants: DOM-004-R1, DOM-004-R2, DOM-004-R3, DOM-004-R4, DOM-004-R5
+  ceilings: 262144 bytes, 1000 triples, 15.0s, 4 concurrent (semantica/explorer/routes/ontology.py:138)
+  retry: none documented - idempotency: none documented
+end note
+
+@enduml

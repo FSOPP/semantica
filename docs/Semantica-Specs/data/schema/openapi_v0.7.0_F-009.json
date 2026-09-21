@@ -1,0 +1,71 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Semantica \u2014 F-009 CLI MCP Server and Agent Integrations",
+    "version": "v0.7.0",
+    "description": "Reversed from route decorators at commit 92c2578a. Shapes are $ref'd from schemas.json; entity definitions are never inlined here."
+  },
+  "paths": {
+    "/api/info": {
+      "get": {
+        "operationId": "root",
+        "summary": "Reversed from semantica/server.py:149",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Reversed from semantica/server.py:161",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/build": {
+      "post": {
+        "operationId": "build_kb",
+        "summary": "Reversed from semantica/server.py:166",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    },
+    "/{full_path:path}": {
+      "get": {
+        "operationId": "serve_spa",
+        "summary": "Reversed from semantica/server.py:219",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    },
+    "schemas": {
+      "ContextEdge": {
+        "$ref": "schemas.json#/$defs/ContextEdge"
+      },
+      "ContextNode": {
+        "$ref": "schemas.json#/$defs/ContextNode"
+      }
+    }
+  }
+}

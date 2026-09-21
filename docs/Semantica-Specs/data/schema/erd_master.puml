@@ -1,0 +1,146 @@
+@startuml erd_master
+' Reversed from schemas.json at commit 92c2578a. Entities are introduced in erd_master.puml.
+hide circle
+skinparam linetype ortho
+
+entity "AnnotationCreate" as AnnotationCreate {
+  * node_id : string
+  * content : string
+    tags : array
+    visibility : string
+}
+
+entity "AnnotationResponse" as AnnotationResponse {
+  * annotation_id : string
+  * node_id : string
+  * content : string
+    tags : array
+    visibility : string
+    created_at : string
+}
+
+entity "ContextEdge" as ContextEdge {
+  * source_id : string
+  * target_id : string
+  * edge_type : string
+    edge_id : string
+    family_id : string
+    weight : number
+    metadata : object
+    valid_from : string
+    valid_until : string
+}
+
+entity "ContextNode" as ContextNode {
+  * node_id : string
+  * node_type : string
+  * content : string
+    metadata : object
+    properties : object
+    valid_from : string
+    valid_until : string
+}
+
+entity "DecisionResponse" as DecisionResponse {
+  * decision_id : string
+    category : string
+    scenario : string
+    reasoning : string
+    outcome : string
+    confidence : number
+    timestamp : string
+    metadata : object
+}
+
+entity "EdgeResponse" as EdgeResponse {
+  * id : string
+  * source : string
+  * target : string
+  * type : string
+    weight : number
+    properties : object
+    valid_from : string
+    valid_until : string
+}
+
+entity "GraphStatsResponse" as GraphStatsResponse {
+  * node_count : integer
+  * edge_count : integer
+    node_types : object
+    edge_types : object
+    density : number
+}
+
+entity "MemorySummaryResponse" as MemorySummaryResponse {
+  * id : string
+  * type : string
+  * excerpt : string
+    updated_at : string
+}
+
+entity "NodeResponse" as NodeResponse {
+  * id : string
+  * type : string
+    content : string
+    properties : object
+    valid_from : string
+    valid_until : string
+}
+
+entity "OntologyEntry" as OntologyEntry {
+  * uri : string
+  * name : string
+    description : string
+    format : string
+    status : string
+    source_url : string
+    version : string
+    class_count : integer
+    concept_count : integer
+    property_count : integer
+    loaded_at : string
+    enabled : boolean
+    tags : array
+}
+
+entity "OntologyPreview" as OntologyPreview {
+  * uri : string
+  * name : string
+    description : string
+    namespace : string
+    version : string
+    license : string
+  * format : string
+    estimated_triples : integer
+    source_url : string
+}
+
+entity "PathResponse" as PathResponse {
+  * source : string
+  * target : string
+  * algorithm : string
+  * path : array
+    edge_ids : array
+    total_weight : number
+    directed : boolean
+    hop_count : integer
+    distance_band : string
+    semantic_similarity : number
+    path_coherence_score : number
+    confidence_decay : number
+    bottleneck_node : string
+    alternative_path_count : integer
+    interpretation : string
+}
+
+entity "VocabularyScheme" as VocabularyScheme {
+  * uri : string
+  * label : string
+    description : string
+}
+
+ContextNode ||--o{ ContextEdge : source_id
+ContextNode ||--o{ ContextEdge : target_id
+NodeResponse ||--o{ AnnotationResponse : node_id
+ContextNode ||--|| DecisionResponse : node_type='decision'
+@enduml

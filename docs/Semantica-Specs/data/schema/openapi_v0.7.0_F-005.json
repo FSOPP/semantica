@@ -1,0 +1,129 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Semantica \u2014 F-005 Context Graph and Decision Intelligence",
+    "version": "v0.7.0",
+    "description": "Reversed from route decorators at commit 92c2578a. Shapes are $ref'd from schemas.json; entity definitions are never inlined here."
+  },
+  "paths": {
+    "/api/analytics": {
+      "get": {
+        "operationId": "get_analytics",
+        "summary": "Reversed from semantica/explorer/routes/analytics.py:17",
+        "responses": {
+          "200": {
+            "description": "Declared response model: AnalyticsResponse"
+          }
+        }
+      }
+    },
+    "/api/analytics/validation": {
+      "get": {
+        "operationId": "validate_graph",
+        "summary": "Reversed from semantica/explorer/routes/analytics.py:77",
+        "responses": {
+          "200": {
+            "description": "Declared response model: ValidationReportResponse"
+          }
+        }
+      }
+    },
+    "/api/decisions": {
+      "get": {
+        "operationId": "list_decisions",
+        "summary": "Reversed from semantica/explorer/routes/decisions.py:31",
+        "responses": {
+          "200": {
+            "description": "Declared response model: list[DecisionResponse]"
+          }
+        }
+      }
+    },
+    "/api/decisions/causal-distance": {
+      "get": {
+        "operationId": "causal_distance",
+        "summary": "Reversed from semantica/explorer/routes/decisions.py:55",
+        "responses": {
+          "200": {
+            "description": "Declared response model: CausalDistanceReport"
+          }
+        }
+      }
+    },
+    "/api/decisions/{decision_id}": {
+      "get": {
+        "operationId": "get_decision",
+        "summary": "Reversed from semantica/explorer/routes/decisions.py:72",
+        "responses": {
+          "200": {
+            "description": "Declared response model: DecisionResponse"
+          }
+        }
+      }
+    },
+    "/api/decisions/{decision_id}/chain": {
+      "get": {
+        "operationId": "get_causal_chain",
+        "summary": "Reversed from semantica/explorer/routes/decisions.py:83",
+        "responses": {
+          "200": {
+            "description": "Declared response model: CausalChainResponse"
+          }
+        }
+      }
+    },
+    "/api/decisions/{decision_id}/precedents": {
+      "get": {
+        "operationId": "get_precedents",
+        "summary": "Reversed from semantica/explorer/routes/decisions.py:106",
+        "responses": {
+          "200": {
+            "description": "Declared response model: list[DecisionResponse]"
+          }
+        }
+      }
+    },
+    "/api/decisions/{decision_id}/compliance": {
+      "get": {
+        "operationId": "check_compliance",
+        "summary": "Reversed from semantica/explorer/routes/decisions.py:145",
+        "responses": {
+          "200": {
+            "description": "Declared response model: ComplianceResponse"
+          }
+        }
+      }
+    },
+    "/api/memories": {
+      "get": {
+        "operationId": "list_memories",
+        "summary": "Reversed from semantica/explorer/routes/memories.py:12",
+        "responses": {
+          "200": {
+            "description": "Declared response model: MemoryListResponse"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    },
+    "schemas": {
+      "ContextNode": {
+        "$ref": "schemas.json#/$defs/ContextNode"
+      },
+      "DecisionResponse": {
+        "$ref": "schemas.json#/$defs/DecisionResponse"
+      },
+      "MemorySummaryResponse": {
+        "$ref": "schemas.json#/$defs/MemorySummaryResponse"
+      }
+    }
+  }
+}

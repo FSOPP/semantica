@@ -1,0 +1,98 @@
+@startuml feature_v0.7.0_F-009_sequence
+' Runtime truth for F-009 v0.7.0 — CLI MCP Server and Agent Integrations
+' Reversed from code at commit 92c2578a. Cast is the participants: list of feature_v0.7.0_F-009_front-matter.yaml, name for name.
+title F-009 v0.7.0 — CLI MCP Server and Agent Integrations
+autonumber
+
+actor "Operator" as Operator
+actor "AI agent" as AgentClient
+participant "semantica.cli" as Cli
+participant "mcp server" as Mcp
+participant "mcp tool module" as Tool
+participant "integration adapter" as Adapter
+participant "ContextGraph or KG" as Core
+
+group F-009-US1 — drive the whole system from a terminal
+  Operator -> Cli : semantica kg build
+  activate Cli
+  Cli -> Core : build graph from sources (semantica/cli.py:1154)
+  activate Core
+  Core --> Cli : graph
+  deactivate Core
+  Cli --> Operator : summary
+  Operator -> Cli : semantica kg query
+  Cli -> Core : query
+  Core --> Cli : rows
+  deactivate Cli
+end
+
+group F-009-US2 — pipe CLI output into another tool
+  Operator -> Cli : semantica kg query with JSON Lines output
+  activate Cli
+  Cli -> Cli : one record per line, bare dict wrapped in a list (semantica/cli.py:2338)
+  Cli --> Operator : newline-delimited records
+  deactivate Cli
+end
+
+group F-009-US3 — call graph and decision tools over MCP
+  Operator -> Cli : semantica mcp start
+  Cli -> Mcp : launch the same server module (semantica/cli.py:5407)
+  activate Mcp
+  AgentClient -> Mcp : tools/list
+  Mcp --> AgentClient : tool descriptors
+  AgentClient -> Mcp : tools/call by name
+  Mcp -> Tool : dispatch (semantica_mcp/mcp/server.py:63)
+  activate Tool
+  Tool -> Core : read or write
+  Core --> Tool : result
+  Tool --> Mcp : payload
+  deactivate Tool
+  Mcp --> AgentClient : result
+  deactivate Mcp
+end
+
+group F-009-US4 — use Semantica from agno, CrewAI or Google ADK
+  AgentClient -> Adapter : tool invocation
+  activate Adapter
+  Adapter -> Adapter : take the per-graph re-entrant lock (integrations/crewai/kg_tool.py:56)
+  Adapter -> Core : add entities and relations
+  Core --> Adapter : nodes and edges added, duplicates skipped
+  Adapter --> AgentClient : counts
+  deactivate Adapter
+end
+
+group failure — tool raises an internal error
+  Tool --> Mcp : exception
+  Mcp -> Mcp : surface the class name, withhold str(exc) (semantica_mcp/mcp/server.py:115)
+  Mcp --> AgentClient : error without paths or connection strings
+end
+
+group failure — rules file carries a present-but-non-list premises value
+  Operator -> Cli : semantica reason run with that file
+  Cli -> Cli : detect the wrong type (semantica/cli.py:1268)
+  Cli --> Operator : clear error, no plain-text reinterpretation
+end
+
+group failure — two tool calls add the same node concurrently
+  Adapter -> Adapter : per-graph re-entrant lock around check-then-act
+  Adapter --> AgentClient : duplicate skipped, never double-counted
+end
+
+group failure — ADK emits a partial or streaming event
+  AgentClient -> Adapter : partial event
+  Adapter -> Adapter : return before touching events or state (integrations/google_adk/session_service.py:490)
+  Adapter --> AgentClient : not persisted
+end
+
+group failure — payload carries many unrecognised keys
+  Core -> Core : truncate each key, cap the key count (semantica/utils/helpers.py:702)
+  Core --> Adapter : bounded error message
+end
+
+note over Mcp
+  invariants: DOM-009-R1, DOM-009-R2, DOM-009-R3, DOM-009-R4, DOM-009-R5, DOM-009-R6
+  concurrency: one re-entrant lock per graph (integrations/crewai/kg_tool.py:56)
+  timeout: none documented - retry: none documented - idempotency: duplicate adds are skipped
+end note
+
+@enduml

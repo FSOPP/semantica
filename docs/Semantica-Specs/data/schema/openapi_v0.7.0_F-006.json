@@ -1,0 +1,70 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Semantica \u2014 F-006 Provenance Reasoning and Explainability",
+    "version": "v0.7.0",
+    "description": "Reversed from route decorators at commit 92c2578a. Shapes are $ref'd from schemas.json; entity definitions are never inlined here."
+  },
+  "paths": {
+    "/api/reason": {
+      "post": {
+        "operationId": "run_reasoning",
+        "summary": "Reversed from semantica/explorer/routes/enrich.py:339",
+        "responses": {
+          "200": {
+            "description": "Declared response model: ReasoningResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "pydantic model ReasoningRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/provenance": {
+      "get": {
+        "operationId": "get_provenance_lineage",
+        "summary": "Reversed from semantica/explorer/routes/provenance.py:330",
+        "responses": {
+          "200": {
+            "description": "Declared response model: ProvenanceResponse"
+          }
+        }
+      }
+    },
+    "/api/provenance/report": {
+      "get": {
+        "operationId": "export_provenance_report",
+        "summary": "Reversed from semantica/explorer/routes/provenance.py:344",
+        "responses": {
+          "200": {
+            "description": "Declared response model: -"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    },
+    "schemas": {
+      "ContextEdge": {
+        "$ref": "schemas.json#/$defs/ContextEdge"
+      },
+      "ContextNode": {
+        "$ref": "schemas.json#/$defs/ContextNode"
+      }
+    }
+  }
+}

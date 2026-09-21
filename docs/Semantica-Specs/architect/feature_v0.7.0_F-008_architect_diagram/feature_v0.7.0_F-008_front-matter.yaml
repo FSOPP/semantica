@@ -1,0 +1,136 @@
+# feature_v0.7.0_F-008_front-matter.yaml — instant architectural context for a coding agent.
+# Reversed from code at commit 92c2578a. Pointers and names only: every shape is defined
+# once, in data/. Unknown goes to open:, never to a plausible value.
+
+# --- identity ------------------------------------------------------------------
+id: "F-008"
+feature: "F-008"
+version: "v0.7.0"
+kind: front-matter
+title: "Export and Interchange"
+status: ready            # draft | ready | accepted | superseded — ready: arch_flow.py check reports no GAP
+owner: unassigned        # no maintainer is named for this feature anywhere in the repository
+updated: "2026-09-21"
+
+# --- activation ----------------------------------------------------------------
+description: "Serialises the graph into 19 formats and reads it back, keeping the serializer's own statements out of a caller-named graph."
+globs:
+  - "semantica/export/**"
+  - "semantica/explorer/routes/export_import.py"
+
+# --- the cast: identical to the participants of feature_v0.7.0_F-008_sequence.puml ---
+participants:
+  - name: "Analyst"
+    role: actor
+    path: "external"
+  - name: "routes.export_import"
+    role: entrypoint
+    path: "semantica/explorer/routes/export_import.py"
+  - name: "export.registry"
+    role: service
+    path: "semantica/export/registry.py"
+  - name: "JsonExporter"
+    role: service
+    path: "semantica/export/json_exporter.py"
+  - name: "RdfExporter"
+    role: service
+    path: "semantica/export/rdf_exporter.py"
+  - name: "GraphSession"
+    role: store
+    path: "semantica/explorer/session.py"
+
+# --- where execution starts -----------------------------------------------------
+entrypoints:
+  - kind: HTTP
+    path: "semantica/explorer/routes/export_import.py"
+    symbol: "export_graph"
+  - kind: HTTP
+    path: "semantica/explorer/routes/export_import.py"
+    symbol: "import_file"
+  - kind: library
+    path: "semantica/export/methods.py"
+    symbol: "export"
+
+# --- contracts: named here, shaped in data/ -------------------------------------
+contracts:
+  endpoints:                # shaped in data/schema/openapi_v0.7.0_F-008.json
+    - "POST /api/export"
+    - "POST /api/export/distance-enriched"
+    - "POST /api/import"
+  events: []             # none: this feature declares no event in data/schema/asyncapi_v0.7.0_F-008.json
+  entities:                # shaped in data/schema/schemas.json
+    - "ContextNode"
+    - "ContextEdge"
+
+depends_on:
+  internal:
+    - "semantica/export/distance_exporter.py"
+    - "semantica/context/context_graph.py"
+  external:
+    - "rdflib"
+    - "pyarrow for the Arrow and Parquet exporters"
+
+# --- the approach, as built (requirement has not run for this feature) -----------
+approach:
+  chosen: "19 format adapters over one graph reader, resolved by name through the export registry."
+  because:
+    - "efficiency: a format is added as one module plus a registry entry"
+    - "robustness: the JSON-LD path keeps a caller-named graph intact while writing its own statements to the default graph"
+    - "resilience: no graph-level metadata subject is invented when the caller does not name the graph"
+  rejected: []           # not recoverable: the repository retains no record of what was rejected
+  adr: "ADR-0003"
+
+# --- what must not break --------------------------------------------------------
+invariants:
+  - "DOM-008-R1"
+  - "DOM-008-R2"
+
+failure_modes:
+  - when: "a caller-named graph would capture the serializer's own statements"
+    expect: "write them to the default graph, where a default-graph reader still sees them"
+  - when: "graph-level metadata has no subject to attach to"
+    expect: "omit the metadata rather than mint a document node"
+  - when: "an import file cannot be read"
+    expect: "report the failure in the import response"
+
+resilience:
+  timeout_ms: "none documented"
+  retry: "none documented"
+  idempotency: "none documented"
+  degraded: "a format whose extra is absent fails that request; the other 18 keep working"
+
+observability:
+  logs: []               # none: no named log event exists for this feature; get_logger is called without an event vocabulary
+  metrics: []            # none: no metrics client is imported anywhere under semantica/
+  traces: []             # none: no tracer or span is created anywhere under semantica/
+
+non_goals:
+  - "transforming or filtering the graph beyond what the export request selects"
+  - "guaranteeing a round trip through the import route: no test asserts one"
+  - "owning any entity: this feature reads the graph and writes files"
+
+# --- traceability ---------------------------------------------------------------
+traceability:
+  stories:
+    - "F-008-US1"
+    - "F-008-US2"
+  rules:
+    - "DOM-008-R1"
+    - "DOM-008-R2"
+  tasks:
+    - "F-008-T1"
+    - "F-008-T2"
+    - "F-008-T3"
+    - "F-008-T4"
+    - "F-008-T5"
+  tests:
+    - "F-008-TC1"
+    - "F-008-TC2"
+    - "F-008-TC3"
+    - "F-008-TC4"
+  route: "docs/Semantica-Specs/route/route_v0.7.0_F-008.md"
+
+open:
+  - "Issue #1147 supplies the default metadata subject once it lands. Until then graph-level metadata is silently absent on unnamed exports - is that acceptable to consumers?"
+  - "Which of the 19 formats are supported contracts and which are conveniences? The registry treats them identically."
+  - "Is an export expected to round-trip through the import route? No test or document asserts it."
